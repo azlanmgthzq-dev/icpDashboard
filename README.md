@@ -1,16 +1,31 @@
-# React + Vite
+# ICP Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Project Details
+The **ICP Dashboard** is an intelligent web application designed to track and manage Industrial Collaboration Program (ICP) and Industrial Collaboration Value (ICV) contracts. It provides a comprehensive overview of active contracts, IPDs (Industrial Participation Programs), and urgent action items.
 
-Currently, two official plugins are available:
+### Key Features
+- **Data Integration:** Upload and parse complex Excel spreadsheets (e.g., Master Tracker Compilation) directly into the database.
+- **Visual Analytics:** Interactive charts and key performance indicator (KPI) bars to visualize ICV and contract statuses.
+- **AI Chatbot Integration:** An embedded AI assistant powered by Vercel AI SDK to provide insights and answer queries.
+- **Contract Management:** Detailed contract tables featuring specific badges (like `WaiverBadge` and `ObaBadge`) and progress indicators.
+- **Urgent Alerts:** Expiry alerts and urgent item tracking to ensure timely action on approaching deadlines.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Tech Stack
+- **Frontend Framework:** React 19, Vite
+- **Routing:** React Router DOM
+- **Database & Backend:** Supabase (PostgreSQL)
+- **State Management:** Zustand
+- **AI Integration:** Vercel AI SDK (`ai`, `@ai-sdk/google`, `@ai-sdk/openai`)
+- **Data Visualization:** Recharts
+- **Data Parsing:** `xlsx` (SheetJS)
+- **Styling:** Vanilla CSS (for maximum flexibility and dynamic design)
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Current Progress
+- [x] Initial project structure setup with routing and views.
+- [x] Visual theme established (transitioned to an Inter-based light theme).
+- [x] Supabase integration configured for database operations.
+- [x] Core UI components implemented (Sidebar, KpiBar, UrgentPanel, ExpiryAlert).
+- [x] Excel Upload and Parsing logic refined for accurate contract and IPD extraction.
+- [x] Contract Table developed with dynamic badges and progress tracking.
+- [x] AI ChatBot component initialized.
+- [x] Initial commit to GitHub repository.
