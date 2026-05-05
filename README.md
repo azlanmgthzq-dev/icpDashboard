@@ -29,3 +29,4 @@ The **ICP Dashboard** is an intelligent web application designed to track and ma
 - [x] Contract Table developed with dynamic badges and progress tracking.
 - [x] AI ChatBot component initialized.
 - [x] Initial commit to GitHub repository.
+- [x] Contract Detail page developed with comprehensive IPD data tables and KPI cards.
