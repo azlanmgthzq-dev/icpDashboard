@@ -11,7 +11,7 @@ export default function App() {
   const { contracts } = useContracts()
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: '#f9fafb' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#0f172a' }}>
       <Sidebar urgentCount={counts.total} />
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Routes>
