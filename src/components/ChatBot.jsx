@@ -12,6 +12,7 @@ export default function ChatBot({ contracts, urgentItems }) {
     const [loading, setLoading] = useState(false)
     const [ipds, setIpds] = useState([])
     const [ganttItems, setGanttItems] = useState([])
+    const [customGuideline, setCustomGuideline] = useState(null)
     const bottomRef = useRef(null)
 
     useEffect(() => {
@@ -32,6 +33,15 @@ export default function ChatBot({ contracts, urgentItems }) {
                 .from('gantt_items')
                 .select('*, gantt_charts(title, overall_status, ipds(code, description))')
             setGanttItems(ganttData || [])
+
+            const { data: aiSettings } = await supabase
+                .from('ai_settings')
+                .select('guidelines')
+                .eq('id', 1)
+                .single()
+            if (aiSettings) {
+                setCustomGuideline(aiSettings.guidelines)
+            }
         }
         fetchData()
     }, [open])
@@ -95,10 +105,12 @@ export default function ChatBot({ contracts, urgentItems }) {
             contract: i.contracts?.name,
         }))
 
-        return `You are GTA Assist, a professional ICP (Industrial Collaboration Programme) assistant for Global Turbine Asia (GTA), a Malaysian aerospace MRO company based in Subang, Selangor.
+        const systemInstruction = customGuideline || `You are GTA Assist, a professional ICP (Industrial Collaboration Programme) assistant for Global Turbine Asia (GTA), a Malaysian aerospace MRO company based in Subang, Selangor.
 
 Answer questions in the same language the user uses (Bahasa Melayu or English). Be concise, accurate and professional.
-When showing numbers, format in RM with commas. When showing percentages, round to 1 decimal place.
+When showing numbers, format in RM with commas. When showing percentages, round to 1 decimal place.`
+
+        return `${systemInstruction}
 
 Today: ${new Date().toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
 

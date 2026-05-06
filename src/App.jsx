@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar'
 import Dashboard from './pages/Dashboard'
 import ContractDetail from './pages/ContractDetail'
 import ChatBot from './components/ChatBot'
+import AiAdmin from './pages/AiAdmin'
 import { useUrgentItems } from './hooks/useUrgentItems'
 import { useContracts } from './hooks/useContracts'
 
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/gantt" element={<div style={{ padding: 40, color: '#9ca3af' }}>Gantt — coming soon</div>} />
           <Route path="/urgent" element={<div style={{ padding: 40, color: '#9ca3af' }}>Urgent folder — coming soon</div>} />
           <Route path="/icv" element={<div style={{ padding: 40, color: '#9ca3af' }}>ICV Tracker — coming soon</div>} />
+          <Route path="/admin" element={<AiAdmin />} />
         </Routes>
       </div>
 

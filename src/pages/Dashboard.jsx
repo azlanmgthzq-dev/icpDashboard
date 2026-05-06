@@ -44,7 +44,7 @@ export default function Dashboard() {
                 {/* Dark gradient overlay */}
                 <div style={{
                     position: 'absolute', inset: 0,
-                    background: 'linear-gradient(105deg, rgba(7,15,40,0.88) 0%, rgba(14,30,60,0.72) 55%, rgba(0,0,0,0.40) 100%)',
+                    background: 'linear-gradient(105deg, rgba(7,15,40,0.88) 0%, rgba(14,30,60,0.72) 0%, rgba(0,0,0,0.40) 0%)',
                 }} />
 
                 {/* Subtle top fade for blend with sidebar */}
