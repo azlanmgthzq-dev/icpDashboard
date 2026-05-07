@@ -89,13 +89,6 @@ export default function KpiBar({ totals, contracts, urgentCount }) {
                     color="#1D9E75"
                     borderColor="#1D9E75"
                 />
-                <KpiCard
-                    label="ICV balance remaining"
-                    value={fmt(totals.icv_balance)}
-                    sub="Still to be claimed"
-                    color="#854F0B"
-                    borderColor="#EF9F27"
-                />
             </div>
 
             {/* Row 2 — Status & alerts */}

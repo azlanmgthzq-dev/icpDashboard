@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard'
 import ContractDetail from './pages/ContractDetail'
 import ChatBot from './components/ChatBot'
 import AiAdmin from './pages/AiAdmin'
+import OrgChart from './pages/OrgChart'
 import { useUrgentItems } from './hooks/useUrgentItems'
 import { useContracts } from './hooks/useContracts'
 
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="/urgent" element={<div style={{ padding: 40, color: '#9ca3af' }}>Urgent folder — coming soon</div>} />
           <Route path="/icv" element={<div style={{ padding: 40, color: '#9ca3af' }}>ICV Tracker — coming soon</div>} />
           <Route path="/admin" element={<AiAdmin />} />
+          <Route path="/org-chart" element={<OrgChart />} />
         </Routes>
       </div>
 
