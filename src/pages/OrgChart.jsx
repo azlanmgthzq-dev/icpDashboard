@@ -6,7 +6,7 @@ const DEFAULT_MEMBERS = [
     { id: 1, name: 'Mohd Rizal B Mohtar', role: 'Head of Department (HOD)' },
     { id: 2, name: 'Nadia Omar', role: 'ICP Manager' },
     { id: 3, name: 'Ahmad Imaduddin', role: 'Project Executive' },
-    { id: 4, name: 'Atiqah Azmi', role: 'Operation & Documentation Exec' },
+    { id: 4, name: 'Atiqah Aziz', role: 'Operation & Documentation Exec' },
     { id: 5, name: 'Megat Amirul', role: 'Project IT Implementation Exec' },
 ]
 
@@ -92,7 +92,7 @@ export default function OrgChart() {
 
         try {
             const base64Image = await compressImage(file)
-            
+
             // Optimistic UI update
             setMembers(prev => prev.map(m => m.id === uploadingId ? { ...m, image_data: base64Image } : m))
 
@@ -114,7 +114,7 @@ export default function OrgChart() {
             alert('Failed to upload image.')
             fetchMembers() // revert
         }
-        
+
         setUploadingId(null)
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
@@ -144,7 +144,7 @@ export default function OrgChart() {
                 position: 'relative',
                 zIndex: 2,
             }}>
-                <div 
+                <div
                     onClick={() => triggerUpload(member.id)}
                     style={{
                         width: 100, height: 100,
@@ -202,7 +202,7 @@ export default function OrgChart() {
                     </div>
                     <p style={{ fontSize: 14, marginBottom: 16 }}>Untuk membolehkan fungsi upload gambar, sila run kod SQL ini dalam Supabase SQL Editor anda:</p>
                     <pre style={{ background: '#0f172a', padding: 16, borderRadius: 8, overflowX: 'auto', fontSize: 13, color: '#38bdf8' }}>
-{`CREATE TABLE org_members (
+                        {`CREATE TABLE org_members (
   id integer PRIMARY KEY,
   name text NOT NULL,
   role text NOT NULL,
@@ -213,7 +213,7 @@ INSERT INTO org_members (id, name, role) VALUES
 (1, 'Mohd Rizal B Mohtar', 'Head of Department (HOD)'),
 (2, 'Nadia Omar', 'ICP Manager'),
 (3, 'Ahmad Imaduddin', 'Project Executive'),
-(4, 'Atiqah Azmi', 'Operation & Documentation Exec'),
+(4, 'Atiqah Aziz', 'Operation & Documentation Exec'),
 (5, 'Megat Amirul', 'Project IT Implementation Exec');`}
                     </pre>
                 </div>
@@ -252,12 +252,12 @@ INSERT INTO org_members (id, name, role) VALUES
                 </div>
             </div>
 
-            <input 
-                type="file" 
-                ref={fileInputRef} 
-                onChange={handleFileChange} 
-                accept="image/*" 
-                style={{ display: 'none' }} 
+            <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                style={{ display: 'none' }}
             />
 
             <style>{`
