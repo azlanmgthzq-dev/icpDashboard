@@ -5,9 +5,9 @@ export function useUrgentItems() {
     const [items, setItems] = useState([])
     const [loading, setLoading] = useState(true)
 
-    useEffect(() => { fetch() }, [])
+    useEffect(() => { fetchItems() }, [])
 
-    async function fetch() {
+    async function fetchItems() {
         const { data } = await supabase
             .from('urgent_items')
             .select('*, contracts(name)')
@@ -16,29 +16,18 @@ export function useUrgentItems() {
         setLoading(false)
     }
 
-    async function upload(file, meta) {
-        const path = `urgent/${Date.now()}_${file.name}`
-        const { error: upErr } = await supabase.storage
-            .from('urgent-docs')
-            .upload(path, file)
-        if (upErr) return { error: upErr.message }
-
-        const { data: { publicUrl } } = supabase.storage
-            .from('urgent-docs')
-            .getPublicUrl(path)
-
-        const { error: dbErr } = await supabase
+    async function addItem({ title, due_date, file_link, uploaded_by, status }) {
+        const { error } = await supabase
             .from('urgent_items')
-            .insert({ ...meta, file_url: publicUrl, file_name: file.name })
-        if (dbErr) return { error: dbErr.message }
-
-        await fetch()
+            .insert([{ title, due_date, file_link, uploaded_by, status }])
+        if (error) return { error: error.message }
+        await fetchItems()
         return { success: true }
     }
 
     async function updateStatus(id, status) {
         await supabase.from('urgent_items').update({ status }).eq('id', id)
-        await fetch()
+        await fetchItems()
     }
 
     const counts = {
@@ -48,5 +37,5 @@ export function useUrgentItems() {
         total: items.filter(i => i.status !== 'Done').length,
     }
 
-    return { items, loading, upload, updateStatus, counts }
+    return { items, loading, addItem, updateStatus, counts }
 }

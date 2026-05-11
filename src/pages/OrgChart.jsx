@@ -6,7 +6,7 @@ const DEFAULT_MEMBERS = [
     { id: 1, name: 'Mohd Rizal B Mohtar', role: 'Head of Department (HOD)' },
     { id: 2, name: 'Nadia Omar', role: 'ICP Manager' },
     { id: 3, name: 'Ahmad Imaduddin', role: 'Project Executive' },
-    { id: 4, name: 'Atiqah Aziz', role: 'Operation & Documentation Exec' },
+    { id: 4, name: 'Atiqah Azis', role: 'Operation & Documentation Exec' },
     { id: 5, name: 'Megat Amirul', role: 'Project IT Implementation Exec' },
 ]
 
@@ -213,7 +213,7 @@ INSERT INTO org_members (id, name, role) VALUES
 (1, 'Mohd Rizal B Mohtar', 'Head of Department (HOD)'),
 (2, 'Nadia Omar', 'ICP Manager'),
 (3, 'Ahmad Imaduddin', 'Project Executive'),
-(4, 'Atiqah Aziz', 'Operation & Documentation Exec'),
+(4, 'Atiqah Azis', 'Operation & Documentation Exec'),
 (5, 'Megat Amirul', 'Project IT Implementation Exec');`}
                     </pre>
                 </div>

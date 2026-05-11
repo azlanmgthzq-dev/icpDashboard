@@ -14,7 +14,7 @@ const today = new Date().toLocaleDateString('en-MY', {
 
 export default function Dashboard() {
     const { contracts, loading, totals, refetch } = useContracts()
-    const { items, loading: urgLoading, upload, updateStatus, counts } = useUrgentItems()
+    const { items, loading: urgLoading, addItem, updateStatus, counts } = useUrgentItems()
 
     const activeContracts = contracts?.filter(c => c.status === 'Active')?.length ?? '–'
     const totalContracts = contracts?.length ?? '–'
@@ -161,7 +161,7 @@ export default function Dashboard() {
                     <ContractTable contracts={contracts} loading={loading} />
                     <UrgentPanel
                         items={items} loading={urgLoading}
-                        upload={upload} updateStatus={updateStatus}
+                        addItem={addItem} updateStatus={updateStatus}
                     />
                 </div>
 
