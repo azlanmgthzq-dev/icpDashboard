@@ -3,10 +3,10 @@ import { useState } from 'react'
 const STATUS_OPTS = ['Not Started', 'In Progress', 'Done', 'On Hold']
 
 const STATUS_COLORS = {
-  'Done':        { bg: '#EAF3DE', color: '#3B6D11' },
+  'Done': { bg: '#EAF3DE', color: '#3B6D11' },
   'In Progress': { bg: '#E6F1FB', color: '#185FA5' },
   'Not Started': { bg: '#f3f4f6', color: '#6b7280' },
-  'On Hold':     { bg: '#FAEEDA', color: '#854F0B' },
+  'On Hold': { bg: '#FAEEDA', color: '#854F0B' },
 }
 
 const CATEGORY_OPTS = ['Essential', 'Strategic']
@@ -37,18 +37,18 @@ function StatusBadge({ status }) {
 }
 
 const COLS = [
-  { key: 'milestone_desc',       label: 'Milestone Description',       type: 'text',   width: 250 },
-  { key: 'submission_number',    label: 'Submission No.',              type: 'text',   width: 120 },
-  { key: 'est_nominal_value',    label: 'Est. Nominal Value',          type: 'number', width: 130 },
-  { key: 'actual_nominal_value', label: 'Actual Nominal Value',        type: 'number', width: 130 },
-  { key: 'multiplier',           label: 'Multiplier',                  type: 'number', width: 80  },
-  { key: 'est_plan_icv',         label: 'Est. Plan ICV',               type: 'calc',   width: 130 },
-  { key: 'actual_icv',           label: 'Actual ICV',                  type: 'calc',   width: 130 },
-  { key: 'submit_notes',         label: 'Claim Submission & Approval', type: 'text',   width: 190 },
-  { key: 'total_icv_approved',   label: 'Total ICV Approved',          type: 'number', width: 130 },
-  { key: 'balance_icv',          label: 'Balance ICV',                 type: 'calc',   width: 130 },
-  { key: 'payment_planning',     label: 'Payment Planning',            type: 'text',   width: 150 },
-  { key: 'status_project',       label: 'Status',                      type: 'select', width: 110 },
+  { key: 'milestone_desc', label: 'Milestone Description', type: 'text', width: 250 },
+  { key: 'submission_number', label: 'Submission No.', type: 'text', width: 120 },
+  { key: 'est_nominal_value', label: 'Est. Nominal Value', type: 'number', width: 130 },
+  { key: 'actual_nominal_value', label: 'Actual Nominal Value', type: 'number', width: 130 },
+  { key: 'multiplier', label: 'Multiplier', type: 'number', width: 80 },
+  { key: 'est_plan_icv', label: 'Est. Plan ICV', type: 'calc', width: 130 },
+  { key: 'actual_icv', label: 'Actual ICV', type: 'calc', width: 130 },
+  { key: 'submit_notes', label: 'Claim Submission & Approval', type: 'text', width: 190 },
+  { key: 'total_icv_approved', label: 'Total ICV Approved', type: 'number', width: 130 },
+  { key: 'balance_icv', label: 'Balance ICV', type: 'calc', width: 130 },
+  { key: 'payment_planning', label: 'Payment Planning', type: 'text', width: 150 },
+  { key: 'status_project', label: 'Status', type: 'select', width: 110 },
 ]
 
 const EMPTY_ROW = {
@@ -310,7 +310,7 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
               cursor: newRow ? 'not-allowed' : 'pointer', fontWeight: 500,
             }}
           >
-            + Add Row
+            + Add Sub IPD
           </button>
           <button
             onClick={() => onEditIpd(ipd)}
@@ -323,7 +323,7 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
             onMouseEnter={e => { e.currentTarget.style.background = '#EBF3FB' }}
             onMouseLeave={e => { e.currentTarget.style.background = '#fff' }}
           >
-            Edit IPD
+            Edit  Sub IPD
           </button>
           <button
             onClick={() => onDeleteIpd(ipd.id)}
