@@ -44,7 +44,7 @@ function WhatIsIcp() {
             <li>Obligation amount is negotiated between the foreign contractor and BIP (MOF)</li>
             <li>Companies must generate Industrial Collaboration Value (ICV) through BIP-approved activities</li>
             <li>ICV must meet or exceed the obligation to discharge the Performance Bond</li>
-            <li>Administered by the <strong>Business &amp; Industrial Partnership (BIP)</strong> unit under MOF</li>
+            <li>Administered by the <strong>Bahagian Industri Pertahanan (BIP)</strong> unit under MOF</li>
           </ul>
         </div>
         <div style={{ flex: 2, minWidth: 220, background: 'linear-gradient(135deg, #EBF3FB, #dbeafe)', borderRadius: 12, border: '1px solid #bfdbfe', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -142,10 +142,10 @@ function IcpInGta({ contracts, loading, totals }) {
       {/* Stats */}
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
         {[
-          { label: 'Total ICP Obligation',  value: fmtRM(totals.obligation),   color: '#1F4E79', borderColor: '#1F4E79', bg: '#EBF3FB' },
-          { label: 'Total ICV Planned',      value: fmtRM(totals.icv_planned),  color: '#185FA5', borderColor: '#378ADD', bg: '#E6F1FB' },
-          { label: 'BIP Approved ICV',       value: fmtRM(totals.approved_icv), color: '#3B6D11', borderColor: '#1D9E75', bg: '#EAF3DE' },
-          { label: 'Active Contracts',       value: String(activeCount),        color: '#854F0B', borderColor: '#EF9F27', bg: '#FAEEDA' },
+          { label: 'Total ICP Obligation', value: fmtRM(totals.obligation), color: '#1F4E79', borderColor: '#1F4E79', bg: '#EBF3FB' },
+          { label: 'Total ICV Planned', value: fmtRM(totals.icv_planned), color: '#185FA5', borderColor: '#378ADD', bg: '#E6F1FB' },
+          { label: 'BIP Approved ICV', value: fmtRM(totals.approved_icv), color: '#3B6D11', borderColor: '#1D9E75', bg: '#EAF3DE' },
+          { label: 'Active Contracts', value: String(activeCount), color: '#854F0B', borderColor: '#EF9F27', bg: '#FAEEDA' },
         ].map(s => (
           <div key={s.label} style={{ flex: 1, minWidth: 160, background: s.bg, borderRadius: 12, border: '0.5px solid #e5e7eb', borderTop: `3px solid ${s.borderColor}`, padding: '16px 18px' }}>
             <div style={{ fontSize: 11, color: s.color, fontWeight: 600, marginBottom: 6, opacity: 0.85 }}>{s.label}</div>
@@ -215,56 +215,56 @@ function IcpInGta({ contracts, loading, totals }) {
 // ─── Tab 3: Process Flow ──────────────────────────────────────────────────────
 
 const ACTOR_STYLES = {
-  GTA:    { bg: '#EBF3FB', color: '#1F4E79',  border: '#bfdbfe' },
-  BOD:    { bg: '#f3e8ff', color: '#6d28d9',  border: '#c4b5fd' },
-  RMAF:   { bg: '#f0fdf4', color: '#166534',  border: '#bbf7d0' },
-  BIP:    { bg: '#fffbeb', color: '#b45309',  border: '#fde68a' },
-  MOF:    { bg: '#ecfeff', color: '#0e7490',  border: '#a5f3fc' },
-  MINDEF: { bg: '#fef2f2', color: '#b91c1c',  border: '#fecaca' },
+  GTA: { bg: '#EBF3FB', color: '#1F4E79', border: '#bfdbfe' },
+  BOD: { bg: '#f3e8ff', color: '#6d28d9', border: '#c4b5fd' },
+  RMAF: { bg: '#f0fdf4', color: '#166534', border: '#bbf7d0' },
+  BIP: { bg: '#fffbeb', color: '#b45309', border: '#fde68a' },
+  MOF: { bg: '#ecfeff', color: '#0e7490', border: '#a5f3fc' },
+  MINDEF: { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca' },
 }
 
 const FLOW_DATA = [
   { type: 'stage', num: 1, title: 'ICP PROPOSAL', bg: 'linear-gradient(90deg,#1F4E79,#2563eb)' },
-  { type: 'step',  actor: 'GTA',                   label: 'Receival of Obligation Letter' },
-  { type: 'step',  actor: 'RMAF',                  label: 'ICP Wishlist from RMAF' },
-  { type: 'step',  actor: 'GTA',                   label: 'Internal Discussion' },
-  { type: 'step',  actor: 'GTA',                   label: 'Initial Review & Feasibility' },
-  { type: 'step',  actor: 'GTA',                   label: 'Risk Assessment' },
-  { type: 'step',  actor: 'GTA',                   label: 'Consolidation of Proposal' },
-  { type: 'step',  actor: ['GTA','BOD'],            label: 'Proposal Review & Approval' },
+  { type: 'step', actor: 'GTA', label: 'Receival of Obligation Letter' },
+  { type: 'step', actor: 'RMAF', label: 'ICP Wishlist from RMAF' },
+  { type: 'step', actor: 'GTA', label: 'Internal Discussion' },
+  { type: 'step', actor: 'GTA', label: 'Initial Review & Feasibility' },
+  { type: 'step', actor: 'GTA', label: 'Risk Assessment' },
+  { type: 'step', actor: 'GTA', label: 'Consolidation of Proposal' },
+  { type: 'step', actor: ['GTA', 'BOD'], label: 'Proposal Review & Approval' },
   { type: 'decision', question: 'Proposal Approved?', yes: 'Proceed to RMAF review', no: 'Revision & Resubmission ↺' },
-  { type: 'step',  actor: 'RMAF',                  label: 'RMAF JKICP Review' },
-  { type: 'step',  actor: ['GTA','RMAF','BIP'],    label: 'GTA / RMAF / BIP Review' },
-  { type: 'decision', question: 'BIP Accept?',        yes: 'Proceed to MOF review',    no: 'Back to Revision ↺' },
-  { type: 'step',  actor: ['BIP','MOF'],            label: 'BIP / MOF Review (IOGC)' },
-  { type: 'decision', question: 'MINDEF Approve?',    yes: 'ICP Approval granted',      no: 'Discharge / Revision' },
-  { type: 'step',  actor: 'GTA',                   label: 'Receival of ICP Approval' },
-  { type: 'step',  actor: 'GTA',                   label: 'ICP Agreement Signed' },
+  { type: 'step', actor: 'RMAF', label: 'RMAF JKICP Review' },
+  { type: 'step', actor: ['GTA', 'RMAF', 'BIP'], label: 'GTA / RMAF / BIP Review' },
+  { type: 'decision', question: 'BIP Accept?', yes: 'Proceed to MOF review', no: 'Back to Revision ↺' },
+  { type: 'step', actor: ['BIP', 'MOF'], label: 'BIP / MOF Review (IOGC)' },
+  { type: 'decision', question: 'MINDEF Approve?', yes: 'ICP Approval granted', no: 'Discharge / Revision' },
+  { type: 'step', actor: 'GTA', label: 'Receival of ICP Approval' },
+  { type: 'step', actor: 'GTA', label: 'ICP Agreement Signed' },
 
-  { type: 'stage', num: 2, title: 'PROJECT EXECUTION',  bg: 'linear-gradient(90deg,#166534,#16a34a)' },
-  { type: 'step',  actor: 'GTA', label: 'Implementation of ICP Project' },
-  { type: 'step',  actor: 'GTA', label: 'Project Execution' },
-  { type: 'step',  actor: 'GTA', label: 'Monitoring & Progress Reporting' },
-  { type: 'step',  actor: 'GTA', label: 'Project Completion' },
+  { type: 'stage', num: 2, title: 'PROJECT EXECUTION', bg: 'linear-gradient(90deg,#166534,#16a34a)' },
+  { type: 'step', actor: 'GTA', label: 'Implementation of ICP Project' },
+  { type: 'step', actor: 'GTA', label: 'Project Execution' },
+  { type: 'step', actor: 'GTA', label: 'Monitoring & Progress Reporting' },
+  { type: 'step', actor: 'GTA', label: 'Project Completion' },
 
-  { type: 'stage', num: 3, title: 'ICV CREDIT CLAIM',   bg: 'linear-gradient(90deg,#b45309,#d97706)' },
-  { type: 'step',  actor: 'GTA', label: 'Preparation of Claim Document' },
-  { type: 'step',  actor: 'GTA', label: 'Gather All Invoices' },
-  { type: 'step',  actor: 'GTA', label: 'Prepare Pictures / Evidence of Items Procured' },
-  { type: 'step',  actor: 'GTA', label: 'Update Tracker to Capture Claimed Cost' },
-  { type: 'step',  actor: 'GTA', label: 'Fill in Claim Form' },
-  { type: 'step',  actor: 'GTA', label: 'Fill in Progress Report' },
-  { type: 'step',  actor: 'GTA', label: 'Contact BIP to Submit' },
-  { type: 'note',  label: 'Required Submission Documents', items: ['Invoice', 'Proof of Payment', 'Certificates (if any)', 'Completed Claim Form', 'Progress Report'] },
+  { type: 'stage', num: 3, title: 'ICV CREDIT CLAIM', bg: 'linear-gradient(90deg,#b45309,#d97706)' },
+  { type: 'step', actor: 'GTA', label: 'Preparation of Claim Document' },
+  { type: 'step', actor: 'GTA', label: 'Gather All Invoices' },
+  { type: 'step', actor: 'GTA', label: 'Prepare Pictures / Evidence of Items Procured' },
+  { type: 'step', actor: 'GTA', label: 'Update Tracker to Capture Claimed Cost' },
+  { type: 'step', actor: 'GTA', label: 'Fill in Claim Form' },
+  { type: 'step', actor: 'GTA', label: 'Fill in Progress Report' },
+  { type: 'step', actor: 'GTA', label: 'Contact BIP to Submit' },
+  { type: 'note', label: 'Required Submission Documents', items: ['Invoice', 'Proof of Payment', 'Certificates (if any)', 'Completed Claim Form', 'Progress Report'] },
 
   { type: 'stage', num: 4, title: 'BIP REVIEW & APPROVAL', bg: 'linear-gradient(90deg,#6d28d9,#7c3aed)' },
-  { type: 'step',  actor: 'BIP',         label: 'BIP Review & Audit' },
+  { type: 'step', actor: 'BIP', label: 'BIP Review & Audit' },
   { type: 'decision', question: 'Verify?', yes: 'Continue to IC Meeting', no: 'Back for Clarification' },
-  { type: 'step',  actor: 'BIP',         label: 'IC Meeting & Review' },
+  { type: 'step', actor: 'BIP', label: 'IC Meeting & Review' },
   { type: 'decision', question: 'Claim Approved?', yes: 'ICV Banking', no: 'Discharge Penalty' },
-  { type: 'step',  actor: ['BIP','GTA'], label: 'ICV Banking' },
-  { type: 'step',  actor: 'GTA',         label: 'Relief of Obligation' },
-  { type: 'step',  actor: 'GTA',         label: 'Release of Performance Bond' },
+  { type: 'step', actor: ['BIP', 'GTA'], label: 'ICV Banking' },
+  { type: 'step', actor: 'GTA', label: 'Relief of Obligation' },
+  { type: 'step', actor: 'GTA', label: 'Release of Performance Bond' },
   { type: 'end' },
 ]
 
@@ -406,10 +406,10 @@ function OurContracts({ contracts, loading }) {
             ? Math.min(100, Math.round((c.approved_planned_icv / c.total_icv_planned) * 100))
             : 0
 
-          const expiryBg    = expired ? '#FCEBEB' : (monthsLeft !== null && monthsLeft <= 9) ? '#FAEEDA' : '#EAF3DE'
+          const expiryBg = expired ? '#FCEBEB' : (monthsLeft !== null && monthsLeft <= 9) ? '#FAEEDA' : '#EAF3DE'
           const expiryColor = expired ? '#A32D2D' : (monthsLeft !== null && monthsLeft <= 9) ? '#854F0B' : '#3B6D11'
           const expiryLabel = expired ? 'Expired' : monthsLeft !== null ? `${monthsLeft}m left` : 'Active'
-          const barColor    = pctApproved >= 70 ? '#1D9E75' : pctApproved >= 40 ? '#378ADD' : '#EF9F27'
+          const barColor = pctApproved >= 70 ? '#1D9E75' : pctApproved >= 40 ? '#378ADD' : '#EF9F27'
 
           return (
             <div key={c.id} onClick={() => navigate(`/contracts/${c.id}`)}
@@ -427,9 +427,9 @@ function OurContracts({ contracts, loading }) {
 
               <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
                 {[
-                  { label: 'Obligation',    value: fmtRM(c.obligation_value),     color: '#111827' },
-                  { label: 'ICV Planned',   value: fmtRM(c.total_icv_planned),    color: '#185FA5' },
-                  { label: 'BIP Approved',  value: fmtRM(c.approved_planned_icv), color: '#3B6D11' },
+                  { label: 'Obligation', value: fmtRM(c.obligation_value), color: '#111827' },
+                  { label: 'ICV Planned', value: fmtRM(c.total_icv_planned), color: '#185FA5' },
+                  { label: 'BIP Approved', value: fmtRM(c.approved_planned_icv), color: '#3B6D11' },
                 ].map(s => (
                   <div key={s.label} style={{ flex: 1, minWidth: 90 }}>
                     <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>{s.label}</div>
@@ -464,9 +464,9 @@ function OurContracts({ contracts, loading }) {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: 'what-is-icp',   label: 'What is ICP?' },
-  { id: 'icp-in-gta',    label: 'ICP in GTA' },
-  { id: 'process-flow',  label: 'Process Flow' },
+  { id: 'what-is-icp', label: 'What is ICP?' },
+  { id: 'icp-in-gta', label: 'ICP in GTA' },
+  { id: 'process-flow', label: 'Process Flow' },
   { id: 'our-contracts', label: 'Our Contracts' },
 ]
 
@@ -494,9 +494,9 @@ export default function Home() {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
-        {activeTab === 'what-is-icp'   && <WhatIsIcp />}
-        {activeTab === 'icp-in-gta'    && <IcpInGta contracts={contracts} loading={loading} totals={totals} />}
-        {activeTab === 'process-flow'  && <ProcessFlow />}
+        {activeTab === 'what-is-icp' && <WhatIsIcp />}
+        {activeTab === 'icp-in-gta' && <IcpInGta contracts={contracts} loading={loading} totals={totals} />}
+        {activeTab === 'process-flow' && <ProcessFlow />}
         {activeTab === 'our-contracts' && <OurContracts contracts={contracts} loading={loading} />}
       </div>
     </div>
