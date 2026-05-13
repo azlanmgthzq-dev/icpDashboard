@@ -1,5 +1,12 @@
-import { NavLink } from 'react-router-dom'
-import { useState } from 'react'
+import { NavLink, Link, useLocation, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+
+const HOME_SUBS = [
+  { tab: 'what-is-icp',   label: 'What is ICP?' },
+  { tab: 'icp-in-gta',    label: 'ICP in GTA' },
+  { tab: 'process-flow',  label: 'Process Flow' },
+  { tab: 'our-contracts', label: 'Our Contracts' },
+]
 
 const NAV = [
     { to: '/', label: 'Overview', icon: 'M3 3h7v7H3V3zm8 0h7v7h-7V3zM3 11h7v7H3v-7zm8 0h7v7h-7v-7z' },
@@ -13,6 +20,16 @@ const NAV = [
 
 export default function Sidebar({ urgentCount = 0 }) {
     const [isOpen, setIsOpen] = useState(true)
+    const [homeExpanded, setHomeExpanded] = useState(false)
+    const location = useLocation()
+    const navigate = useNavigate()
+
+    const isHomePage = location.pathname === '/home'
+    const activeTab = new URLSearchParams(location.search).get('tab')
+
+    useEffect(() => {
+        if (isHomePage) setHomeExpanded(true)
+    }, [isHomePage])
 
     return (
         <div style={{
@@ -97,6 +114,76 @@ export default function Sidebar({ urgentCount = 0 }) {
 
             {/* Nav links */}
             <nav style={{ flex: 1 }}>
+
+                {/* Home — expandable */}
+                <div>
+                    <button
+                        onClick={() => {
+                            navigate('/home?tab=what-is-icp')
+                            if (isOpen) setHomeExpanded(prev => !prev)
+                        }}
+                        title={!isOpen ? 'Home' : undefined}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            padding: isOpen ? '9px 12px' : '10px',
+                            borderRadius: 10, marginBottom: 3,
+                            width: '100%', border: 'none', cursor: 'pointer', textAlign: 'left',
+                            background: isHomePage
+                                ? 'linear-gradient(90deg, rgba(59,130,246,0.22) 0%, rgba(59,130,246,0.08) 100%)'
+                                : 'transparent',
+                            color: isHomePage ? '#93c5fd' : '#94a3b8',
+                            fontWeight: isHomePage ? 600 : 400,
+                            fontSize: 13,
+                            justifyContent: isOpen ? 'flex-start' : 'center',
+                            borderLeft: isHomePage ? '3px solid #3b82f6' : '3px solid transparent',
+                            transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={e => { if (!isHomePage) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#cbd5e1' } }}
+                        onMouseLeave={e => { if (!isHomePage) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8' } }}
+                    >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ flexShrink: 0 }}>
+                            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
+                            <path d="M9 22V12h6v10" />
+                        </svg>
+                        {isOpen && (
+                            <>
+                                <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden' }}>Home</span>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                    <path d={homeExpanded ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} />
+                                </svg>
+                            </>
+                        )}
+                    </button>
+
+                    {isOpen && homeExpanded && (
+                        <div style={{ paddingLeft: 30, marginBottom: 6 }}>
+                            {HOME_SUBS.map(sub => {
+                                const isActive = isHomePage && activeTab === sub.tab
+                                return (
+                                    <Link
+                                        key={sub.tab}
+                                        to={`/home?tab=${sub.tab}`}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 8,
+                                            padding: '6px 10px', borderRadius: 7, marginBottom: 2,
+                                            fontSize: 12, textDecoration: 'none',
+                                            color: isActive ? '#93c5fd' : '#64748b',
+                                            background: isActive ? 'rgba(59,130,246,0.12)' : 'transparent',
+                                            fontWeight: isActive ? 600 : 400,
+                                            transition: 'all 0.12s',
+                                        }}
+                                        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                                        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
+                                    >
+                                        <span style={{ width: 5, height: 5, borderRadius: '50%', flexShrink: 0, background: isActive ? '#93c5fd' : '#475569' }} />
+                                        {sub.label}
+                                    </Link>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+
                 {NAV.map(item => (
                     <NavLink key={item.to} to={item.to} end={item.to === '/'}
                         title={!isOpen ? item.label : undefined}
