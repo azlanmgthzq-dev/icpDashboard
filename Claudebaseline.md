@@ -159,7 +159,7 @@ src/
 - **Strategic**: Beyond normal operations — R&D, digitization, conferences, Masters/PhD programs
 
 ### Claim Submission Flow
-1. GTA submits claim to BIP (Bumiputera Industry Programme/Petronas)
+1. GTA submits claim to BIP (Bahagian Industri Pertahanan)
 2. BIP reviews → Approved or Rejected
 3. If rejected → Re-submit required
 4. Approved amount recorded as `total_icv_approved`

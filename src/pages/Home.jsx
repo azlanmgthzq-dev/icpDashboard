@@ -41,7 +41,7 @@ function WhatIsIcp() {
           <div style={{ fontSize: 11, fontWeight: 700, color: '#1F4E79', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Programme Overview</div>
           <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, color: '#374151', lineHeight: 1.9 }}>
             <li>Applies to foreign contracts typically above <strong>RM 5 million</strong></li>
-            <li>Obligation amount is negotiated between the foreign contractor and BIP (MOF)</li>
+            <li>Obligation amount is negotiated between the foreign contractor and BIP (MINDEF)</li>
             <li>Companies must generate Industrial Collaboration Value (ICV) through BIP-approved activities</li>
             <li>ICV must meet or exceed the obligation to discharge the Performance Bond</li>
             <li>Administered by the <strong>Bahagian Industri Pertahanan (BIP)</strong> unit under MOF</li>
@@ -296,7 +296,7 @@ function ProcessFlow() {
           ['GTA', 'Global Turbine Asia'],
           ['BOD', 'Board of Director'],
           ['RMAF', 'RMAF'],
-          ['BIP', 'BIP (MOF)'],
+          ['BIP', 'BIP (MINDEF)'],
           ['MOF', 'MOF'],
           ['MINDEF', 'MINDEF'],
         ].map(([key, label]) => {
