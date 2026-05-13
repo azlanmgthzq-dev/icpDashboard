@@ -44,7 +44,7 @@ function WhatIsIcp() {
             <li>Obligation amount is negotiated between the foreign contractor and BIP (MINDEF)</li>
             <li>Companies must generate Industrial Collaboration Value (ICV) through BIP-approved activities</li>
             <li>ICV must meet or exceed the obligation to discharge the Performance Bond</li>
-            <li>Administered by the <strong>Bahagian Industri Pertahanan (BIP)</strong> unit under MOF</li>
+            <li>Administered by the <strong>Bahagian Industri Pertahanan (BIP)</strong> unit under MINDEF</li>
           </ul>
         </div>
         <div style={{ flex: 2, minWidth: 220, background: 'linear-gradient(135deg, #EBF3FB, #dbeafe)', borderRadius: 12, border: '1px solid #bfdbfe', padding: '20px 22px', display: 'flex', flexDirection: 'column', gap: 12 }}>
