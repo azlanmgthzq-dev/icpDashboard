@@ -130,11 +130,11 @@ function AddIpdModal({ onClose, onSave }) {
 // ─── Edit IPD Modal ───────────────────────────────────────────────────────────
 function EditIpdModal({ ipd, onClose, onSave }) {
   const [form, setForm] = useState({
-    code:             ipd.code             ?? '',
-    description:      ipd.description      ?? '',
-    beneficiary:      ipd.beneficiary      ?? '',
+    code: ipd.code ?? '',
+    description: ipd.description ?? '',
+    beneficiary: ipd.beneficiary ?? '',
     project_category: ipd.project_category ?? '',
-    category_type:    ipd.category_type    ?? '',
+    category_type: ipd.category_type ?? '',
   })
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')

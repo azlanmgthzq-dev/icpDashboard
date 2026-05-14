@@ -1,20 +1,20 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 
 const STATUS_OPTS = ['Not Started', 'In Progress', 'Done', 'On Hold']
-
 const STATUS_COLORS = {
   'Done': { bg: '#EAF3DE', color: '#3B6D11' },
   'In Progress': { bg: '#E6F1FB', color: '#185FA5' },
   'Not Started': { bg: '#f3f4f6', color: '#6b7280' },
   'On Hold': { bg: '#FAEEDA', color: '#854F0B' },
 }
-
 const CATEGORY_OPTS = ['Essential', 'Strategic']
-
 const CATEGORY_COLORS = {
   'Essential': { bg: '#EAF3DE', color: '#3B6D11' },
   'Strategic': { bg: '#FAEEDA', color: '#854F0B' },
 }
+
+// Columns that sub-rows inherit from their parent (readonly/greyed in sub-rows)
+const SHARED_COL_KEYS = new Set(['milestone_desc', 'est_nominal_value', 'multiplier', 'est_plan_icv'])
 
 function fmt(n) {
   if (n === null || n === undefined || n === '') return '—'
@@ -22,6 +22,13 @@ function fmt(n) {
   if (isNaN(num)) return '—'
   if (Math.abs(num) >= 1e6) return `RM ${(num / 1e6).toFixed(2)}M`
   return `RM ${num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+function fmtNum(n) {
+  if (n === null || n === undefined || n === '') return '—'
+  const num = Number(n)
+  if (isNaN(num)) return '—'
+  return num.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 function StatusBadge({ status }) {
@@ -41,7 +48,7 @@ const COLS = [
   { key: 'submission_number', label: 'Submission No.', type: 'text', width: 120 },
   { key: 'est_nominal_value', label: 'Est. Nominal Value', type: 'number', width: 130 },
   { key: 'actual_nominal_value', label: 'Actual Nominal Value', type: 'number', width: 130 },
-  { key: 'multiplier', label: 'Multiplier', type: 'number', width: 80 },
+  { key: 'multiplier', label: 'Multiplier', type: 'plain', width: 80 },
   { key: 'est_plan_icv', label: 'Est. Plan ICV', type: 'calc', width: 130 },
   { key: 'actual_icv', label: 'Actual ICV', type: 'calc', width: 130 },
   { key: 'submit_notes', label: 'Claim Submission & Approval', type: 'text', width: 190 },
@@ -57,15 +64,21 @@ const EMPTY_ROW = {
   payment_planning: '', status_project: 'Not Started',
 }
 
-function calc(row) {
-  const est = parseFloat(row.est_nominal_value) || 0
+const EMPTY_SUB_ROW = {
+  submission_number: '', actual_nominal_value: '',
+  submit_notes: '', total_icv_approved: '',
+  payment_planning: '', status_project: 'Not Started',
+}
+
+// parentRow: when provided, use parent's est/multiplier for the shared-column calc
+function calc(row, parentRow = null) {
+  const est = parseFloat(parentRow ? parentRow.est_nominal_value : row.est_nominal_value) || 0
   const actual = parseFloat(row.actual_nominal_value) || 0
-  const mult = parseFloat(row.multiplier) || 0
-  const approved = parseFloat(row.total_icv_approved) || 0
+  const mult = parseFloat(parentRow ? parentRow.multiplier : row.multiplier) || 0
   return {
     est_plan_icv: est * mult,
     actual_icv: actual * mult,
-    balance_icv: est * mult - approved,
+    balance_icv: actual * mult - est * mult,
   }
 }
 
@@ -93,7 +106,7 @@ function EditCell({ col, value, onChange, onBlur }) {
   return (
     <input
       autoFocus
-      type={col.type === 'number' ? 'number' : 'text'}
+      type={col.type === 'number' || col.type === 'plain' ? 'number' : 'text'}
       value={value ?? ''}
       onChange={e => onChange(e.target.value)}
       onBlur={onBlur}
@@ -106,15 +119,38 @@ function EditCell({ col, value, onChange, onBlur }) {
   )
 }
 
+function CellValue({ col, value }) {
+  if (col.type === 'calc') return <span style={{ color: '#185FA5', fontWeight: 500 }}>{fmt(value)}</span>
+  if (col.type === 'select') return <StatusBadge status={value} />
+  if (col.type === 'plain') return <span style={{ color: '#374151', cursor: 'text' }}>{fmtNum(value)}</span>
+  if (col.type === 'number') return <span style={{ color: '#374151', cursor: 'text' }}>{fmt(value)}</span>
+  return (
+    <span style={{
+      color: '#374151', cursor: 'text', display: 'block',
+      maxWidth: col.width, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+    }}>
+      {value || <span style={{ color: '#d1d5db' }}>—</span>}
+    </span>
+  )
+}
+
 export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, onDelete, onUpdateIpd, onDeleteIpd, onEditIpd }) {
   const [editingCell, setEditingCell] = useState(null)
   const [draftValues, setDraftValues] = useState({})
   const [newRow, setNewRow] = useState(null)
+  const [newSubRow, setNewSubRow] = useState(null) // { parentId, data }
   const [saving, setSaving] = useState(false)
 
-  // IPD header inline edit state
-  const [editingIpd, setEditingIpd] = useState(null) // 'beneficiary' | 'project_category' | null
+  const [editingIpd, setEditingIpd] = useState(null)
   const [ipdDraft, setIpdDraft] = useState({})
+
+  // Group milestones into parents and a children map
+  const parents = milestones.filter(m => !m.parent_milestone_id)
+  const childrenMap = {}
+  milestones.filter(m => m.parent_milestone_id).forEach(m => {
+    if (!childrenMap[m.parent_milestone_id]) childrenMap[m.parent_milestone_id] = []
+    childrenMap[m.parent_milestone_id].push(m)
+  })
 
   function startIpdEdit(field) {
     setEditingIpd(field)
@@ -124,23 +160,14 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
   async function commitIpdField(field) {
     setEditingIpd(null)
     if (ipdDraft[field] === undefined || ipdDraft[field] === ipd[field]) return
-    try {
-      await onUpdateIpd(ipd.id, { [field]: ipdDraft[field] })
-    } catch (e) {
-      console.error(e)
-    }
+    try { await onUpdateIpd(ipd.id, { [field]: ipdDraft[field] }) } catch (e) { console.error(e) }
   }
 
   async function commitCategoryChange(val) {
     setEditingIpd(null)
-    try {
-      await onUpdateIpd(ipd.id, { project_category: val })
-    } catch (e) {
-      console.error(e)
-    }
+    try { await onUpdateIpd(ipd.id, { project_category: val }) } catch (e) { console.error(e) }
   }
 
-  // Milestone cell editing
   function startEdit(rowId, colKey, currentVal) {
     setEditingCell({ rowId, colKey })
     setDraftValues(prev => ({
@@ -162,20 +189,19 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
     if (!(colKey in draft)) return
     const merged = { ...row, ...draft }
     const payload = { [colKey]: draft[colKey] }
+    const isSub = !!row.parent_milestone_id
     if (['est_nominal_value', 'actual_nominal_value', 'multiplier', 'total_icv_approved'].includes(colKey)) {
       Object.assign(payload, {
-        est_nominal_value: merged.est_nominal_value,
         actual_nominal_value: merged.actual_nominal_value,
-        multiplier: merged.multiplier,
         total_icv_approved: merged.total_icv_approved,
+        ...(!isSub && {
+          est_nominal_value: merged.est_nominal_value,
+          multiplier: merged.multiplier,
+        }),
       })
     }
     setSaving(true)
-    try {
-      await onUpdate(row.id, payload)
-    } catch (e) {
-      console.error(e)
-    }
+    try { await onUpdate(row.id, payload) } catch (e) { console.error(e) }
     setSaving(false)
   }
 
@@ -187,16 +213,224 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
   async function saveNewRow() {
     if (!newRow?.milestone_desc?.trim()) return
     setSaving(true)
-    try {
-      await onAdd(newRow)
-      setNewRow(null)
-    } catch (e) {
-      console.error(e)
-    }
+    try { await onAdd(newRow); setNewRow(null) } catch (e) { console.error(e) }
     setSaving(false)
   }
 
+  async function saveNewSubRow() {
+    if (!newSubRow) return
+    setSaving(true)
+    try {
+      await onAdd({ ...newSubRow.data, parent_milestone_id: newSubRow.parentId })
+      setNewSubRow(null)
+    } catch (e) { console.error(e) }
+    setSaving(false)
+  }
+
+  // Footer: est_plan_icv/est_nominal_value sum parent rows only; balance uses true per-parent calc
+  function computeTotal(col) {
+    const sumKeys = ['est_nominal_value', 'actual_nominal_value', 'est_plan_icv', 'actual_icv', 'total_icv_approved', 'balance_icv']
+    if (!sumKeys.includes(col.key)) return null
+
+    if (col.key === 'balance_icv') {
+      const totalActualIcv = milestones.reduce((s, r) => {
+        const parentRow = r.parent_milestone_id ? parents.find(p => p.id === r.parent_milestone_id) : null
+        return s + (calc(r, parentRow).actual_icv || 0)
+      }, 0)
+      const totalEstPlanIcv = parents.reduce((s, r) => s + (calc(r).est_plan_icv || 0), 0)
+      return totalActualIcv - totalEstPlanIcv
+    }
+
+    if (['est_plan_icv', 'est_nominal_value'].includes(col.key)) {
+      return parents.reduce((s, r) =>
+        s + (col.type === 'calc' ? (calc(r)[col.key] || 0) : (parseFloat(r[col.key]) || 0)), 0)
+    }
+
+    // actual_nominal_value, actual_icv, total_icv_approved: sum all rows
+    return milestones.reduce((s, r) => {
+      if (col.type === 'calc') {
+        const parentRow = r.parent_milestone_id ? parents.find(p => p.id === r.parent_milestone_id) : null
+        return s + (calc(r, parentRow)[col.key] || 0)
+      }
+      return s + (parseFloat(r[col.key]) || 0)
+    }, 0)
+  }
+
   const catStyle = CATEGORY_COLORS[ipd.project_category] || { bg: '#f3f4f6', color: '#6b7280' }
+
+  // ── Render a data row (parent or sub) ────────────────────────────────────────
+  function renderRow(row, parentRow = null) {
+    const isSub = !!parentRow
+    const computed = calc({ ...row, ...(draftValues[row.id] || {}) }, parentRow)
+
+    return (
+      <tr
+        key={row.id}
+        style={{ borderBottom: '0.5px solid #f3f4f6', background: isSub ? '#fafbff' : undefined }}
+        onMouseEnter={e => { e.currentTarget.style.background = isSub ? '#f0f4ff' : '#fafafa' }}
+        onMouseLeave={e => { e.currentTarget.style.background = isSub ? '#fafbff' : '' }}
+      >
+        {COLS.map(col => {
+          const isShared = isSub && SHARED_COL_KEYS.has(col.key)
+          const isEditing = editingCell?.rowId === row.id && editingCell?.colKey === col.key
+
+          if (isShared) {
+            const parentVal = col.type === 'calc' ? calc(parentRow)[col.key] : parentRow[col.key]
+            return (
+              <td key={col.key} style={{ padding: '9px 10px', verticalAlign: 'middle', minWidth: col.width }}>
+                {col.key === 'milestone_desc' ? (
+                  <span style={{
+                    color: '#9ca3af', paddingLeft: 20, display: 'block',
+                    maxWidth: col.width, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {parentVal || '—'}
+                  </span>
+                ) : col.type === 'calc' ? (
+                  <span style={{ color: '#93c5fd' }}>{fmt(parentVal)}</span>
+                ) : col.type === 'plain' ? (
+                  <span style={{ color: '#9ca3af' }}>{fmtNum(parentVal)}</span>
+                ) : (
+                  <span style={{ color: '#9ca3af' }}>{fmt(parentVal)}</span>
+                )}
+              </td>
+            )
+          }
+
+          const cellVal = col.type === 'calc'
+            ? computed[col.key]
+            : (draftValues[row.id]?.[col.key] !== undefined ? draftValues[row.id][col.key] : row[col.key])
+
+          return (
+            <td
+              key={col.key}
+              style={{ padding: '9px 10px', verticalAlign: 'middle', minWidth: col.width }}
+              onClick={() => { if (col.type !== 'calc' && !isEditing) startEdit(row.id, col.key, row[col.key]) }}
+            >
+              {isEditing ? (
+                <EditCell
+                  col={col}
+                  value={draftValues[row.id]?.[col.key] ?? row[col.key]}
+                  onChange={val => draftChange(row.id, col.key, val)}
+                  onBlur={() => commitEdit(row, col.key)}
+                />
+              ) : (
+                <CellValue col={col} value={cellVal} />
+              )}
+            </td>
+          )
+        })}
+
+        <td style={{ padding: '9px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+          {!isSub && (
+            <button
+              onClick={() => setNewSubRow({ parentId: row.id, data: { ...EMPTY_SUB_ROW } })}
+              title="Add sub-submission"
+              style={{
+                background: 'none', border: '1px solid #bfdbfe', cursor: 'pointer',
+                color: '#185FA5', fontSize: 12, lineHeight: 1,
+                padding: '2px 6px', borderRadius: 4, marginRight: 4,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#EBF3FB' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
+            >
+              +
+            </button>
+          )}
+          <button
+            onClick={() => handleDeleteRow(row.id)}
+            title="Delete row"
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer',
+              color: '#d1d5db', fontSize: 14, lineHeight: 1, padding: '2px 4px', borderRadius: 4,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = '#ef4444' }}
+            onMouseLeave={e => { e.currentTarget.style.color = '#d1d5db' }}
+          >
+            ✕
+          </button>
+        </td>
+      </tr>
+    )
+  }
+
+  // ── Render new sub-row input row ─────────────────────────────────────────────
+  function renderNewSubRow(parent) {
+    const subComputed = calc(newSubRow.data, parent)
+    return (
+      <tr style={{ background: '#f0f7ff', borderBottom: '0.5px solid #bfdbfe' }}>
+        {COLS.map(col => {
+          if (SHARED_COL_KEYS.has(col.key)) {
+            const parentVal = col.type === 'calc' ? calc(parent)[col.key] : parent[col.key]
+            return (
+              <td key={col.key} style={{ padding: '7px 10px', minWidth: col.width }}>
+                {col.key === 'milestone_desc' ? (
+                  <span style={{ color: '#9ca3af', paddingLeft: 20, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {parentVal || '—'}
+                  </span>
+                ) : col.type === 'calc' ? (
+                  <span style={{ color: '#93c5fd' }}>{fmt(parentVal)}</span>
+                ) : col.type === 'plain' ? (
+                  <span style={{ color: '#9ca3af' }}>{fmtNum(parentVal)}</span>
+                ) : (
+                  <span style={{ color: '#9ca3af' }}>{fmt(parentVal)}</span>
+                )}
+              </td>
+            )
+          }
+          return (
+            <td key={col.key} style={{ padding: '7px 10px', minWidth: col.width }}>
+              {col.type === 'calc' ? (
+                <span style={{ color: '#185FA5', fontWeight: 500 }}>{fmt(subComputed[col.key])}</span>
+              ) : col.type === 'select' ? (
+                <select
+                  value={newSubRow.data[col.key] || ''}
+                  onChange={e => setNewSubRow(prev => ({ ...prev, data: { ...prev.data, [col.key]: e.target.value } }))}
+                  style={{
+                    fontSize: 12, border: '1px solid #bfdbfe', borderRadius: 4,
+                    padding: '2px 4px', background: '#fff', width: col.width - 8,
+                  }}
+                >
+                  {STATUS_OPTS.map(o => <option key={o} value={o}>{o}</option>)}
+                </select>
+              ) : (
+                <input
+                  type={col.type === 'number' || col.type === 'plain' ? 'number' : 'text'}
+                  placeholder={col.label}
+                  value={newSubRow.data[col.key] ?? ''}
+                  onChange={e => setNewSubRow(prev => ({ ...prev, data: { ...prev.data, [col.key]: e.target.value } }))}
+                  style={{
+                    fontSize: 12, border: '1px solid #bfdbfe', borderRadius: 4,
+                    padding: '2px 6px', background: '#fff', width: col.width - 12, outline: 'none',
+                  }}
+                />
+              )}
+            </td>
+          )
+        })}
+        <td style={{ padding: '7px 10px', whiteSpace: 'nowrap' }}>
+          <button
+            onClick={saveNewSubRow}
+            disabled={saving}
+            style={{
+              fontSize: 11, padding: '3px 8px', borderRadius: 4,
+              background: '#1F4E79', color: '#fff', border: 'none', cursor: 'pointer', marginRight: 4,
+            }}
+          >
+            Save
+          </button>
+          <button
+            onClick={() => setNewSubRow(null)}
+            style={{
+              fontSize: 11, padding: '3px 8px', borderRadius: 4,
+              background: '#f3f4f6', color: '#6b7280', border: 'none', cursor: 'pointer',
+            }}
+          >
+            Cancel
+          </button>
+        </td>
+      </tr>
+    )
+  }
 
   return (
     <div style={{ background: '#fff', borderRadius: 10, border: '0.5px solid #e5e7eb', overflow: 'hidden' }}>
@@ -207,16 +441,12 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
         background: '#f8fafc', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
       }}>
         <div>
-          {/* Code + Description */}
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
             <span style={{ fontWeight: 700, fontSize: 14, color: '#1F4E79' }}>{ipd.code}</span>
             <span style={{ fontSize: 13, color: '#374151', fontWeight: 500 }}>{ipd.description}</span>
           </div>
 
-          {/* Beneficiary + Category */}
           <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-
-            {/* Beneficiary */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500 }}>Beneficiary:</span>
               {editingIpd === 'beneficiary' ? (
@@ -228,8 +458,7 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
                   onKeyDown={e => { if (e.key === 'Enter') e.target.blur() }}
                   style={{
                     fontSize: 12, border: '1px solid #1F4E79', borderRadius: 4,
-                    padding: '2px 8px', outline: 'none', background: '#fff', color: '#111827',
-                    minWidth: 80,
+                    padding: '2px 8px', outline: 'none', background: '#fff', color: '#111827', minWidth: 80,
                   }}
                 />
               ) : (
@@ -248,7 +477,6 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
               )}
             </div>
 
-            {/* Project Category */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500 }}>Category:</span>
               {editingIpd === 'project_category' ? (
@@ -283,7 +511,6 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
               )}
             </div>
 
-            {/* IPD Type (category_type) — read-only badge, edit via Edit IPD modal */}
             {ipd.category_type && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                 <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 500 }}>IPD Type:</span>
@@ -298,7 +525,6 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
           </div>
         </div>
 
-        {/* Right: saving + Add Row + Delete IPD */}
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', paddingTop: 2 }}>
           {saving && <span style={{ fontSize: 11, color: '#9ca3af' }}>Saving…</span>}
           <button
@@ -323,7 +549,7 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
             onMouseEnter={e => { e.currentTarget.style.background = '#EBF3FB' }}
             onMouseLeave={e => { e.currentTarget.style.background = '#fff' }}
           >
-            Edit  Sub IPD
+            Edit Sub IPD
           </button>
           <button
             onClick={() => onDeleteIpd(ipd.id)}
@@ -356,92 +582,28 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
                   {c.type === 'calc' && <span style={{ color: '#d1d5db', marginLeft: 2 }}>⚡</span>}
                 </th>
               ))}
-              <th style={{
-                padding: '8px 10px', borderBottom: '0.5px solid #e5e7eb', width: 40,
-              }} />
+              <th style={{ padding: '8px 10px', borderBottom: '0.5px solid #e5e7eb', width: 60 }} />
             </tr>
           </thead>
           <tbody>
-            {milestones.length === 0 && !newRow && (
+            {parents.length === 0 && !newRow && (
               <tr>
                 <td colSpan={COLS.length + 1} style={{
                   padding: '32px 16px', textAlign: 'center', color: '#9ca3af', fontSize: 12,
                 }}>
-                  No milestones yet — click "+ Add Row" to get started.
+                  No milestones yet — click "+ Add Sub IPD" to get started.
                 </td>
               </tr>
             )}
 
-            {milestones.map(row => {
-              const computed = calc({ ...row, ...(draftValues[row.id] || {}) })
-              return (
-                <tr
-                  key={row.id}
-                  style={{ borderBottom: '0.5px solid #f3f4f6' }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#fafafa'}
-                  onMouseLeave={e => e.currentTarget.style.background = ''}
-                >
-                  {COLS.map(col => {
-                    const isEditing = editingCell?.rowId === row.id && editingCell?.colKey === col.key
-                    const cellVal = col.type === 'calc'
-                      ? computed[col.key]
-                      : (draftValues[row.id]?.[col.key] !== undefined
-                        ? draftValues[row.id][col.key]
-                        : row[col.key])
+            {parents.map(parent => (
+              <Fragment key={parent.id}>
+                {renderRow(parent)}
+                {(childrenMap[parent.id] || []).map(child => renderRow(child, parent))}
+                {newSubRow?.parentId === parent.id && renderNewSubRow(parent)}
+              </Fragment>
+            ))}
 
-                    return (
-                      <td
-                        key={col.key}
-                        style={{ padding: '9px 10px', verticalAlign: 'middle', minWidth: col.width }}
-                        onClick={() => {
-                          if (col.type !== 'calc' && !isEditing)
-                            startEdit(row.id, col.key, row[col.key])
-                        }}
-                      >
-                        {isEditing ? (
-                          <EditCell
-                            col={col}
-                            value={draftValues[row.id]?.[col.key] ?? row[col.key]}
-                            onChange={val => draftChange(row.id, col.key, val)}
-                            onBlur={() => commitEdit(row, col.key)}
-                          />
-                        ) : col.type === 'calc' ? (
-                          <span style={{ color: '#185FA5', fontWeight: 500 }}>{fmt(cellVal)}</span>
-                        ) : col.type === 'select' ? (
-                          <StatusBadge status={cellVal} />
-                        ) : col.type === 'number' ? (
-                          <span style={{ color: '#374151', cursor: 'text' }}>{fmt(cellVal)}</span>
-                        ) : (
-                          <span style={{
-                            color: '#374151', cursor: 'text', display: 'block',
-                            maxWidth: col.width, overflow: 'hidden',
-                            textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                          }}>
-                            {cellVal || <span style={{ color: '#d1d5db' }}>—</span>}
-                          </span>
-                        )}
-                      </td>
-                    )
-                  })}
-                  <td style={{ padding: '9px 10px', textAlign: 'center' }}>
-                    <button
-                      onClick={() => handleDeleteRow(row.id)}
-                      title="Delete row"
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: '#d1d5db', fontSize: 14, lineHeight: 1, padding: '2px 4px', borderRadius: 4,
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.color = '#ef4444'}
-                      onMouseLeave={e => e.currentTarget.style.color = '#d1d5db'}
-                    >
-                      ✕
-                    </button>
-                  </td>
-                </tr>
-              )
-            })}
-
-            {/* New row entry */}
             {newRow && (
               <tr style={{ background: '#f0f7ff', borderBottom: '0.5px solid #bfdbfe' }}>
                 {COLS.map(col => {
@@ -463,14 +625,13 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
                         </select>
                       ) : (
                         <input
-                          type={col.type === 'number' ? 'number' : 'text'}
+                          type={col.type === 'number' || col.type === 'plain' ? 'number' : 'text'}
                           placeholder={col.label}
                           value={newRow[col.key] ?? ''}
                           onChange={e => setNewRow(prev => ({ ...prev, [col.key]: e.target.value }))}
                           style={{
                             fontSize: 12, border: '1px solid #bfdbfe', borderRadius: 4,
-                            padding: '2px 6px', background: '#fff', width: col.width - 12,
-                            outline: 'none',
+                            padding: '2px 6px', background: '#fff', width: col.width - 12, outline: 'none',
                           }}
                         />
                       )}
@@ -483,8 +644,7 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
                     disabled={saving}
                     style={{
                       fontSize: 11, padding: '3px 8px', borderRadius: 4,
-                      background: '#1F4E79', color: '#fff', border: 'none',
-                      cursor: 'pointer', marginRight: 4,
+                      background: '#1F4E79', color: '#fff', border: 'none', cursor: 'pointer', marginRight: 4,
                     }}
                   >
                     Save
@@ -503,7 +663,6 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
             )}
           </tbody>
 
-          {/* Footer totals */}
           {milestones.length > 0 && (
             <tfoot>
               <tr style={{ background: '#f9fafb', borderTop: '1px solid #e5e7eb' }}>
@@ -511,11 +670,8 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
                   Totals
                 </td>
                 {COLS.slice(1).map(col => {
-                  const sumKeys = ['est_nominal_value', 'actual_nominal_value', 'est_plan_icv', 'actual_icv', 'total_icv_approved', 'balance_icv']
-                  if (sumKeys.includes(col.key)) {
-                    const total = col.type === 'calc'
-                      ? milestones.reduce((s, r) => s + (calc(r)[col.key] || 0), 0)
-                      : milestones.reduce((s, r) => s + (parseFloat(r[col.key]) || 0), 0)
+                  const total = computeTotal(col)
+                  if (total !== null) {
                     return (
                       <td key={col.key} style={{
                         padding: '8px 10px', fontWeight: 600, fontSize: 12,
