@@ -51,9 +51,10 @@ const COLS = [
   { key: 'multiplier', label: 'Multiplier', type: 'plain', width: 80 },
   { key: 'est_plan_icv', label: 'Est. Plan ICV', type: 'calc', width: 130 },
   { key: 'actual_icv', label: 'Actual ICV', type: 'calc', width: 130 },
+  { key: 'icv_variance', label: 'ICV Variance', type: 'variance', width: 130 },
   { key: 'submit_notes', label: 'Claim Submission & Approval', type: 'text', width: 190 },
   { key: 'total_icv_approved', label: 'Total ICV Approved', type: 'number', width: 130 },
-  { key: 'balance_icv', label: 'Balance ICV', type: 'calc', width: 130 },
+  { key: 'balance_to_claim', label: 'Balance to Claim', type: 'balance', width: 130 },
   { key: 'payment_planning', label: 'Payment Planning', type: 'text', width: 150 },
   { key: 'status_project', label: 'Status', type: 'select', width: 110 },
 ]
@@ -75,15 +76,18 @@ function calc(row, parentRow = null) {
   const est = parseFloat(parentRow ? parentRow.est_nominal_value : row.est_nominal_value) || 0
   const actual = parseFloat(row.actual_nominal_value) || 0
   const mult = parseFloat(parentRow ? parentRow.multiplier : row.multiplier) || 0
+  const estPlanIcv = est * mult
+  const actualIcv = actual * mult
   return {
-    est_plan_icv: est * mult,
-    actual_icv: actual * mult,
-    balance_icv: actual * mult - est * mult,
+    est_plan_icv: estPlanIcv,
+    actual_icv: actualIcv,
+    icv_variance: actualIcv - estPlanIcv,
+    balance_to_claim: estPlanIcv - actualIcv,
   }
 }
 
 function EditCell({ col, value, onChange, onBlur }) {
-  if (col.type === 'calc') {
+  if (col.type === 'calc' || col.type === 'balance' || col.type === 'variance') {
     return <span style={{ fontSize: 12, color: '#185FA5', fontWeight: 500 }}>{fmt(value)}</span>
   }
   if (col.type === 'select') {
@@ -121,6 +125,19 @@ function EditCell({ col, value, onChange, onBlur }) {
 
 function CellValue({ col, value }) {
   if (col.type === 'calc') return <span style={{ color: '#185FA5', fontWeight: 500 }}>{fmt(value)}</span>
+  if (col.type === 'variance') {
+    const num = Number(value)
+    if (!value && value !== 0) return <span style={{ color: '#9ca3af' }}>—</span>
+    if (num === 0) return <span style={{ color: '#9ca3af' }}>—</span>
+    if (num > 0) return <span style={{ color: '#16a34a', fontWeight: 500 }}>{`+${fmt(value)}`}</span>
+    return <span style={{ color: '#ef4444', fontWeight: 500 }}>{fmt(value)}</span>
+  }
+  if (col.type === 'balance') {
+    const num = Number(value)
+    if (!value && value !== 0) return <span style={{ color: '#9ca3af' }}>—</span>
+    if (num > 0) return <span style={{ color: '#b45309', fontWeight: 500 }}>{fmt(value)}</span>
+    return <span style={{ color: '#185FA5', fontWeight: 500 }}>{fmt(value)}</span>
+  }
   if (col.type === 'select') return <StatusBadge status={value} />
   if (col.type === 'plain') return <span style={{ color: '#374151', cursor: 'text' }}>{fmtNum(value)}</span>
   if (col.type === 'number') return <span style={{ color: '#374151', cursor: 'text' }}>{fmt(value)}</span>
@@ -227,18 +244,20 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
     setSaving(false)
   }
 
-  // Footer: est_plan_icv/est_nominal_value sum parent rows only; balance uses true per-parent calc
+  // Footer: est_plan_icv/est_nominal_value sum parent rows only; balance/variance use true per-parent calc
   function computeTotal(col) {
-    const sumKeys = ['est_nominal_value', 'actual_nominal_value', 'est_plan_icv', 'actual_icv', 'total_icv_approved', 'balance_icv']
+    const sumKeys = ['est_nominal_value', 'actual_nominal_value', 'est_plan_icv', 'actual_icv', 'total_icv_approved', 'balance_to_claim', 'icv_variance']
     if (!sumKeys.includes(col.key)) return null
 
-    if (col.key === 'balance_icv') {
+    if (col.key === 'balance_to_claim' || col.key === 'icv_variance') {
       const totalActualIcv = milestones.reduce((s, r) => {
         const parentRow = r.parent_milestone_id ? parents.find(p => p.id === r.parent_milestone_id) : null
         return s + (calc(r, parentRow).actual_icv || 0)
       }, 0)
       const totalEstPlanIcv = parents.reduce((s, r) => s + (calc(r).est_plan_icv || 0), 0)
-      return totalActualIcv - totalEstPlanIcv
+      return col.key === 'balance_to_claim'
+        ? totalEstPlanIcv - totalActualIcv
+        : totalActualIcv - totalEstPlanIcv
     }
 
     if (['est_plan_icv', 'est_nominal_value'].includes(col.key)) {
@@ -296,7 +315,8 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
             )
           }
 
-          const cellVal = col.type === 'calc'
+          const isComputedCol = ['calc', 'balance', 'variance'].includes(col.type)
+          const cellVal = isComputedCol
             ? computed[col.key]
             : (draftValues[row.id]?.[col.key] !== undefined ? draftValues[row.id][col.key] : row[col.key])
 
@@ -304,7 +324,7 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
             <td
               key={col.key}
               style={{ padding: '9px 10px', verticalAlign: 'middle', minWidth: col.width }}
-              onClick={() => { if (col.type !== 'calc' && !isEditing) startEdit(row.id, col.key, row[col.key]) }}
+              onClick={() => { if (!isComputedCol && !isEditing) startEdit(row.id, col.key, row[col.key]) }}
             >
               {isEditing ? (
                 <EditCell
@@ -379,8 +399,8 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
           }
           return (
             <td key={col.key} style={{ padding: '7px 10px', minWidth: col.width }}>
-              {col.type === 'calc' ? (
-                <span style={{ color: '#185FA5', fontWeight: 500 }}>{fmt(subComputed[col.key])}</span>
+              {['calc', 'balance', 'variance'].includes(col.type) ? (
+                <CellValue col={col} value={subComputed[col.key]} />
               ) : col.type === 'select' ? (
                 <select
                   value={newSubRow.data[col.key] || ''}
@@ -579,7 +599,7 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
                   borderBottom: '0.5px solid #e5e7eb', minWidth: c.width,
                 }}>
                   {c.label}
-                  {c.type === 'calc' && <span style={{ color: '#d1d5db', marginLeft: 2 }}>⚡</span>}
+                  {['calc', 'balance', 'variance'].includes(c.type) && <span style={{ color: '#d1d5db', marginLeft: 2 }}>⚡</span>}
                 </th>
               ))}
               <th style={{ padding: '8px 10px', borderBottom: '0.5px solid #e5e7eb', width: 60 }} />
@@ -610,8 +630,8 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
                   const computed = calc(newRow)
                   return (
                     <td key={col.key} style={{ padding: '7px 10px', minWidth: col.width }}>
-                      {col.type === 'calc' ? (
-                        <span style={{ color: '#185FA5', fontWeight: 500 }}>{fmt(computed[col.key])}</span>
+                      {['calc', 'balance', 'variance'].includes(col.type) ? (
+                        <CellValue col={col} value={computed[col.key]} />
                       ) : col.type === 'select' ? (
                         <select
                           value={newRow[col.key] || ''}
@@ -672,13 +692,23 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
                 {COLS.slice(1).map(col => {
                   const total = computeTotal(col)
                   if (total !== null) {
+                    let color = '#374151'
+                    let display = fmt(total)
+                    if (col.key === 'icv_variance') {
+                      if (total === 0) { color = '#9ca3af'; display = '—' }
+                      else if (total > 0) { color = '#16a34a'; display = `+${fmt(total)}` }
+                      else { color = '#ef4444' }
+                    } else if (col.key === 'balance_to_claim') {
+                      color = total > 0 ? '#b45309' : '#185FA5'
+                    } else if (['est_plan_icv', 'actual_icv'].includes(col.key)) {
+                      color = '#185FA5'
+                    }
                     return (
                       <td key={col.key} style={{
                         padding: '8px 10px', fontWeight: 600, fontSize: 12,
-                        color: col.key.includes('icv') ? '#185FA5' : '#374151',
-                        whiteSpace: 'nowrap',
+                        color, whiteSpace: 'nowrap',
                       }}>
-                        {fmt(total)}
+                        {display}
                       </td>
                     )
                   }

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
 
+const GENERATED_COLS = ['est_plan_icv', 'actual_icv', 'balance_to_claim', 'icv_variance']
+
 export function useIcvTracker(contractId) {
   const [ipds, setIpds] = useState([])
   const [milestones, setMilestones] = useState({}) // keyed by ipd_id
@@ -49,10 +51,7 @@ export function useIcvTracker(contractId) {
 
   const addMilestone = async (ipdId, fields) => {
     const payload = { ...fields, ipd_id: ipdId }
-    // strip generated columns — Supabase computes these server-side
-    delete payload.est_plan_icv
-    delete payload.actual_icv
-    delete payload.balance_icv
+    GENERATED_COLS.forEach(col => delete payload[col])
     const { data, error } = await supabase
       .from('ipd_milestones')
       .insert([payload])
@@ -68,9 +67,7 @@ export function useIcvTracker(contractId) {
 
   const updateMilestone = async (ipdId, milestoneId, fields) => {
     const payload = { ...fields }
-    delete payload.est_plan_icv
-    delete payload.actual_icv
-    delete payload.balance_icv
+    GENERATED_COLS.forEach(col => delete payload[col])
     const { data, error } = await supabase
       .from('ipd_milestones')
       .update(payload)

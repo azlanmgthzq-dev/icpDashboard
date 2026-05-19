@@ -7,6 +7,7 @@ import AiAdmin from './pages/AiAdmin'
 import OrgChart from './pages/OrgChart'
 import IcvTracker from './pages/IcvTracker'
 import Home from './pages/Home'
+import DocumentReference from './pages/DocumentReference'
 import { useUrgentItems } from './hooks/useUrgentItems'
 import { useContracts } from './hooks/useContracts'
 
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/home" element={<Home />} />
           <Route path="/admin" element={<AiAdmin />} />
           <Route path="/org-chart" element={<OrgChart />} />
+          <Route path="/docs" element={<DocumentReference />} />
         </Routes>
       </div>
 

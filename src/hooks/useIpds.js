@@ -28,5 +28,34 @@ export function useIpds(contractId) {
     actual_icv:         acc.actual_icv         + (i.actual_icv         || 0),
   }), { estimated_plan_icv: 0, sum_plan_icv: 0, credits_claim: 0, actual_icv: 0 })
 
-  return { ipds, loading, error, totals, refetch: fetchIpds }
+  const addIpd = async (fields) => {
+    const { data, error } = await supabase
+      .from('ipds')
+      .insert([{ ...fields, contract_id: contractId }])
+      .select()
+      .single()
+    if (error) throw error
+    setIpds(prev => [...prev, data].sort((a, b) => a.code.localeCompare(b.code)))
+    return data
+  }
+
+  const updateIpd = async (id, fields) => {
+    const { data, error } = await supabase
+      .from('ipds')
+      .update(fields)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    setIpds(prev => prev.map(i => i.id === id ? data : i))
+    return data
+  }
+
+  const deleteIpd = async (id) => {
+    const { error } = await supabase.from('ipds').delete().eq('id', id)
+    if (error) throw error
+    setIpds(prev => prev.filter(i => i.id !== id))
+  }
+
+  return { ipds, loading, error, totals, refetch: fetchIpds, addIpd, updateIpd, deleteIpd }
 }

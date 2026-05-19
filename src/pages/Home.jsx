@@ -470,6 +470,13 @@ const TABS = [
   { id: 'our-contracts', label: 'Our Contracts' },
 ]
 
+const TAB_BG = {
+  'what-is-icp':   '/services_images/service1.jpg',
+  'icp-in-gta':    '/services_images/dato.jpg',
+  'process-flow':  '/services_images/maintenance1.jpg',
+  'our-contracts': '/services_images/LW-1035.jpg',
+}
+
 export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams()
   const activeTab = searchParams.get('tab') || 'what-is-icp'
@@ -493,7 +500,14 @@ export default function Home() {
         ))}
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto', padding: '28px 32px' }}>
+      <div style={{
+        flex: 1, overflowY: 'auto', padding: '28px 32px',
+        backgroundImage: `linear-gradient(rgba(15,32,68,0.88), rgba(15,32,68,0.80)), url(${TAB_BG[activeTab]})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+        transition: 'background-image 0.3s ease',
+      }}>
         {activeTab === 'what-is-icp' && <WhatIsIcp />}
         {activeTab === 'icp-in-gta' && <IcpInGta contracts={contracts} loading={loading} totals={totals} />}
         {activeTab === 'process-flow' && <ProcessFlow />}

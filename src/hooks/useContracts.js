@@ -28,5 +28,41 @@ export function useContracts() {
         approved_icv: acc.approved_icv + (c.approved_planned_icv || 0),
     }), { obligation: 0, icv_planned: 0, icv_balance: 0, approved_icv: 0 })
 
-    return { contracts, loading, error, totals, refetch: fetchContracts }
+    const addContract = async (fields) => {
+        const { data, error } = await supabase
+            .from('contracts')
+            .insert([fields])
+            .select()
+            .single()
+        if (error) throw error
+        setContracts(prev => [...prev, data].sort((a, b) => a.id - b.id))
+        return data
+    }
+
+    const updateContract = async (id, fields) => {
+        const { data, error } = await supabase
+            .from('contracts')
+            .update(fields)
+            .eq('id', id)
+            .select()
+            .single()
+        if (error) throw error
+        setContracts(prev => prev.map(c => c.id === id ? data : c))
+        return data
+    }
+
+    const deleteContract = async (id) => {
+        const { error } = await supabase
+            .from('contracts')
+            .delete()
+            .eq('id', id)
+        if (error) throw error
+        setContracts(prev => prev.filter(c => c.id !== id))
+    }
+
+    return {
+        contracts, loading, error, totals,
+        refetch: fetchContracts,
+        addContract, updateContract, deleteContract,
+    }
 }

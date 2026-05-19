@@ -13,7 +13,6 @@ const STATUS_COLORS = {
 
 function fmt(n) {
   if (!n && n !== 0) return '—'
-  if (n >= 1e6) return `RM ${(n / 1e6).toFixed(2)}M`
   return `RM ${Number(n).toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 }
 
@@ -32,7 +31,7 @@ function StatusBadge({ status }) {
 
 
 
-export default function IpdTable({ ipds, loading }) {
+export default function IpdTable({ ipds, loading, onAddIpd, onEditIpd, onDeleteIpd }) {
   const navigate = useNavigate()
   const { id } = useParams()
 
@@ -68,9 +67,22 @@ export default function IpdTable({ ipds, loading }) {
             {ipds.length} projects
           </span>
         </div>
-        <span style={{ fontSize: 11, color: '#9ca3af' }}>
-          Click row to view details
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 11, color: '#9ca3af' }}>Click row to view details</span>
+          {onAddIpd && (
+            <button
+              onClick={onAddIpd}
+              style={{
+                fontSize: 12, padding: '5px 12px', borderRadius: 7,
+                background: '#1F4E79', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 500,
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#185FA5' }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#1F4E79' }}
+            >
+              + Add IPD
+            </button>
+          )}
+        </div>
       </div>
 
       <div style={{ overflowX: 'auto' }}>
@@ -80,7 +92,7 @@ export default function IpdTable({ ipds, loading }) {
               {[
                 'Code', 'Description', 'Category',
                 'Nominal Value', 'Est. Plan ICV', 'Sum Plan ICV', 'Credits Claim',
-                'Claim %', 'Claim Progress', 'Activity Progress',
+                'Claim %', 'Claim Progress', 'Activity Progress', '',
               ].map(h => (
                 <th key={h} style={{
                   padding: '10px 14px', textAlign: 'left',
@@ -163,6 +175,34 @@ export default function IpdTable({ ipds, loading }) {
                 <td style={{ padding: '12px 14px' }}>
                   <StatusBadge status={ipd.activity_progress} />
                 </td>
+                <td style={{ padding: '12px 14px', whiteSpace: 'nowrap' }} onClick={e => e.stopPropagation()}>
+                  {onEditIpd && (
+                    <button
+                      onClick={() => onEditIpd(ipd)}
+                      style={{
+                        fontSize: 11, padding: '3px 9px', borderRadius: 5, marginRight: 4,
+                        background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#e5e7eb' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = '#f3f4f6' }}
+                    >
+                      Edit
+                    </button>
+                  )}
+                  {onDeleteIpd && (
+                    <button
+                      onClick={() => onDeleteIpd(ipd.id)}
+                      style={{
+                        fontSize: 11, padding: '3px 9px', borderRadius: 5,
+                        background: '#fff', color: '#ef4444', border: '0.5px solid #fca5a5', cursor: 'pointer',
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = '#fef2f2' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = '#fff' }}
+                    >
+                      Delete
+                    </button>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
@@ -200,7 +240,7 @@ export default function IpdTable({ ipds, loading }) {
               }}>
                 {fmt(ipds.reduce((s, i) => s + (i.credits_claim || 0), 0))}
               </td>
-              <td colSpan={3} />
+              <td colSpan={4} />
             </tr>
           </tfoot>
         </table>
