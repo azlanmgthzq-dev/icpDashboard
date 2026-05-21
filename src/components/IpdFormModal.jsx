@@ -7,8 +7,8 @@ const CATEGORY_TYPE_OPTS = [
   'Human Capital Development - Knowledge Transfer',
   'Supply Chain Development', 'Other',
 ]
-const PROJECT_CAT_OPTS  = ['Essential', 'Strategic']
-const PROGRESS_OPTS     = ['Not Started', 'In Progress', 'Completed', 'Pending', 'Re-submitted', 'Approved', 'Rejected']
+const PROJECT_CAT_OPTS = ['Essential', 'Strategic']
+const PROGRESS_OPTS = ['Not Started', 'In Progress', 'Completed', 'Pending', 'Re-submitted', 'Approved', 'Rejected']
 
 const EMPTY = {
   code: '', description: '', category_type: '', project_category: '',
@@ -211,7 +211,7 @@ export default function IpdFormModal({ ipd, onSave, onClose }) {
         </div>
 
         <div style={{ marginBottom: 16 }}>
-          <label style={labelStyle}>BIP Comments</label>
+          <label style={labelStyle}>Remark</label>
           <textarea value={form.bip_comments} onChange={e => set('bip_comments', e.target.value)} rows={2} placeholder="BIP reviewer comments..." style={{ ...inputStyle, resize: 'vertical', fontFamily: 'inherit' }} />
         </div>
 

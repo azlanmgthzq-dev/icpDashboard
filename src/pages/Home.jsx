@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useContracts } from '../hooks/useContracts'
 
@@ -10,6 +11,169 @@ function fmtRM(n) {
 function fmtDate(d) {
   if (!d) return '—'
   return new Date(d).toLocaleDateString('en-MY', { month: 'short', year: 'numeric' })
+}
+
+// ─── ICP Evolution Timeline ───────────────────────────────────────────────────
+
+const TIMELINE_EVENTS = [
+  { year: '1987', title: 'Countertrade Programme', desc: "Introduced by Ministry of Finance as Malaysia's first structured industrial collaboration mechanism." },
+  { year: '1990', title: 'First Defence Offset', desc: 'Malaysia purchased Hawk aircraft from BAE Systems (UK) — the first formal defence offset arrangement.' },
+  { year: '2005', title: 'Countertrade & Offset Policy', desc: 'Evolved into a comprehensive Countertrade and Offset Policy covering broader sectors.' },
+  { year: '2014', title: 'Policy Update', desc: 'Updated Countertrade and Offset Policy with refined obligations and compliance mechanisms.' },
+  { year: '2025', title: 'ICP — PK 1.7', desc: 'Rebranded as ICP under PK 1.7 with Outcome-Based Approach (OBA) introduced in the 3rd edition.' },
+]
+
+function IcpTimeline() {
+  const [visible, setVisible] = useState(false)
+  const [narrow, setNarrow] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true) }, { threshold: 0.12 })
+    if (ref.current) obs.observe(ref.current)
+    return () => obs.disconnect()
+  }, [])
+
+  useEffect(() => {
+    const check = () => setNarrow(window.innerWidth < 680)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  return (
+    <div ref={ref} style={{
+      background: '#fff', borderRadius: 12, border: '0.5px solid #e5e7eb', borderTop: '3px solid #1F4E79',
+      padding: '20px 22px',
+      opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(22px)',
+      transition: 'opacity 0.55s ease, transform 0.55s ease',
+    }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#1F4E79', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 20 }}>
+        ICP Evolution Timeline
+      </div>
+
+      {narrow ? (
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {TIMELINE_EVENTS.map((ev, i) => (
+            <div key={i} style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#1F4E79', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>{ev.year}</div>
+                {i < TIMELINE_EVENTS.length - 1 && <div style={{ width: 2, flex: 1, background: '#d1d5db', minHeight: 20, margin: '4px 0' }} />}
+              </div>
+              <div style={{ paddingTop: 14, paddingBottom: i < TIMELINE_EVENTS.length - 1 ? 20 : 0 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#378ADD', marginBottom: 4 }}>{ev.title}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.6 }}>{ev.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'stretch' }}>
+          <div style={{ position: 'absolute', left: '5%', right: '5%', height: 2, background: 'linear-gradient(90deg,#1F4E79,#378ADD,#1F4E79)', top: '50%', transform: 'translateY(-50%)', zIndex: 0 }} />
+          {TIMELINE_EVENTS.map((ev, i) => {
+            const above = i % 2 === 0
+            return (
+              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: 0 }}>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: '8px 6px 16px', textAlign: 'center', minHeight: 100 }}>
+                  {above && (
+                    <>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#378ADD', lineHeight: 1.35, marginBottom: 4 }}>{ev.title}</div>
+                      <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.55 }}>{ev.desc}</div>
+                    </>
+                  )}
+                </div>
+                <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#1F4E79', boxShadow: '0 0 0 3px #fff, 0 0 0 5px #1F4E79', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1, flexShrink: 0, color: '#fff', fontSize: 11, fontWeight: 800 }}>{ev.year}</div>
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', padding: '16px 6px 8px', textAlign: 'center', minHeight: 100 }}>
+                  {!above && (
+                    <>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#378ADD', lineHeight: 1.35, marginBottom: 4 }}>{ev.title}</div>
+                      <div style={{ fontSize: 11, color: '#6b7280', lineHeight: 1.55 }}>{ev.desc}</div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      <div style={{ textAlign: 'right', marginTop: 14, fontSize: 10, color: '#9ca3af', fontStyle: 'italic' }}>
+        Sources: Malaysia MOF Policy Documents; Balakrishnan (2008); PK 1.7 Third Edition (2025)
+      </div>
+    </div>
+  )
+}
+
+// ─── Key Facts Grid ───────────────────────────────────────────────────────────
+
+const KEY_FACTS_COLS = [
+  {
+    icon: '📅', title: 'History & Background', borderColor: '#1F4E79',
+    facts: [
+      { text: "Malaysia's first offset was in 1990 — Hawk aircraft purchased from BAE Systems (UK)", source: 'Balakrishnan (2008)' },
+      { text: 'Offset value typically ranges from 30% to 400% of contract value', source: 'Balakrishnan (2008)' },
+    ],
+  },
+  {
+    icon: '📋', title: 'Policy & Obligation', borderColor: '#378ADD',
+    facts: [
+      { text: 'OBA (Outcome-Based Approach) introduced Jan 2025 under PK 1.7 3rd Edition', source: 'PK 1.7 Third Edition' },
+      { text: 'NDIP: mandatory minimum 30% local content in all defence contracts', source: 'SA ICP MY Ecosystem — HO_GBDS & Contract' },
+      { text: 'ICP viewed as tool for a self-reliant and resilient defence industry', source: 'PK 1.7 Third Edition' },
+    ],
+  },
+  {
+    icon: '🤝', title: 'Best Practice', borderColor: '#1D9E75',
+    facts: [
+      { text: 'Success depends on effective monitoring & auditing with a structured framework', source: 'Abdullah & Safari (2018)' },
+      { text: 'Industrial partnerships built on mutual interest — government role: monitor, ensure delivery, mediate disputes', source: 'Balakrishnan & Johar (2021)' },
+      { text: 'Clear integrated roadmap needed for technology transfer through offsets', source: 'Kumar Behera (2009)' },
+    ],
+  },
+]
+
+function KeyFactsGrid() {
+  const [visible, setVisible] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setVisible(true) }, { threshold: 0.1 })
+    if (ref.current) obs.observe(ref.current)
+    return () => obs.disconnect()
+  }, [])
+
+  return (
+    <div ref={ref} style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(22px)', transition: 'opacity 0.6s ease 0.15s, transform 0.6s ease 0.15s' }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#1F4E79', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>
+        Key Facts &amp; Research Insights
+      </div>
+      <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        {KEY_FACTS_COLS.map((col, i) => (
+          <div key={i}
+            style={{ flex: 1, minWidth: 240, background: '#fff', borderRadius: 12, border: '0.5px solid #e5e7eb', borderTop: `3px solid ${col.borderColor}`, padding: '18px 20px', transition: 'box-shadow 0.2s, transform 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,0,0,0.10)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
+            onMouseLeave={e => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = '' }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+              <span style={{ fontSize: 18 }}>{col.icon}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#1F4E79' }}>{col.title}</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {col.facts.map((fact, j) => (
+                <div key={j}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <span style={{ color: col.borderColor, fontWeight: 700, flexShrink: 0 }}>•</span>
+                    <span style={{ fontSize: 12, color: '#374151', lineHeight: 1.65 }}>{fact.text}</span>
+                  </div>
+                  <div style={{ fontSize: 10, color: '#9ca3af', fontStyle: 'italic', paddingLeft: 16, marginTop: 2 }}>{fact.source}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 // ─── Tab 1: What is ICP? ──────────────────────────────────────────────────────
@@ -120,6 +284,12 @@ function WhatIsIcp() {
           </div>
         ))}
       </div>
+
+      {/* ICP Evolution Timeline */}
+      <IcpTimeline />
+
+      {/* Key Facts Grid */}
+      <KeyFactsGrid />
     </div>
   )
 }
@@ -214,175 +384,148 @@ function IcpInGta({ contracts, loading, totals }) {
 
 // ─── Tab 3: Process Flow ──────────────────────────────────────────────────────
 
-const ACTOR_STYLES = {
-  GTA: { bg: '#EBF3FB', color: '#1F4E79', border: '#bfdbfe' },
-  BOD: { bg: '#f3e8ff', color: '#6d28d9', border: '#c4b5fd' },
-  RMAF: { bg: '#f0fdf4', color: '#166534', border: '#bbf7d0' },
-  BIP: { bg: '#fffbeb', color: '#b45309', border: '#fde68a' },
-  MOF: { bg: '#ecfeff', color: '#0e7490', border: '#a5f3fc' },
-  MINDEF: { bg: '#fef2f2', color: '#b91c1c', border: '#fecaca' },
-}
-
-const FLOW_DATA = [
-  { type: 'stage', num: 1, title: 'ICP PROPOSAL', bg: 'linear-gradient(90deg,#1F4E79,#2563eb)' },
-  { type: 'step', actor: 'GTA', label: 'Receival of Obligation Letter' },
-  { type: 'step', actor: 'RMAF', label: 'ICP Wishlist from RMAF' },
-  { type: 'step', actor: 'GTA', label: 'Internal Discussion' },
-  { type: 'step', actor: 'GTA', label: 'Initial Review & Feasibility' },
-  { type: 'step', actor: 'GTA', label: 'Risk Assessment' },
-  { type: 'step', actor: 'GTA', label: 'Consolidation of Proposal' },
-  { type: 'step', actor: ['GTA', 'BOD'], label: 'Proposal Review & Approval' },
-  { type: 'decision', question: 'Proposal Approved?', yes: 'Proceed to RMAF review', no: 'Revision & Resubmission ↺' },
-  { type: 'step', actor: 'RMAF', label: 'RMAF JKICP Review' },
-  { type: 'step', actor: ['GTA', 'RMAF', 'BIP'], label: 'GTA / RMAF / BIP Review' },
-  { type: 'decision', question: 'BIP Accept?', yes: 'Proceed to MOF review', no: 'Back to Revision ↺' },
-  { type: 'step', actor: ['BIP', 'MOF'], label: 'BIP / MOF Review (IOGC)' },
-  { type: 'decision', question: 'MINDEF Approve?', yes: 'ICP Approval granted', no: 'Discharge / Revision' },
-  { type: 'step', actor: 'GTA', label: 'Receival of ICP Approval' },
-  { type: 'step', actor: 'GTA', label: 'ICP Agreement Signed' },
-
-  { type: 'stage', num: 2, title: 'PROJECT EXECUTION', bg: 'linear-gradient(90deg,#166534,#16a34a)' },
-  { type: 'step', actor: 'GTA', label: 'Implementation of ICP Project' },
-  { type: 'step', actor: 'GTA', label: 'Project Execution' },
-  { type: 'step', actor: 'GTA', label: 'Monitoring & Progress Reporting' },
-  { type: 'step', actor: 'GTA', label: 'Project Completion' },
-
-  { type: 'stage', num: 3, title: 'ICV CREDIT CLAIM', bg: 'linear-gradient(90deg,#b45309,#d97706)' },
-  { type: 'step', actor: 'GTA', label: 'Preparation of Claim Document' },
-  { type: 'step', actor: 'GTA', label: 'Gather All Invoices' },
-  { type: 'step', actor: 'GTA', label: 'Prepare Pictures / Evidence of Items Procured' },
-  { type: 'step', actor: 'GTA', label: 'Update Tracker to Capture Claimed Cost' },
-  { type: 'step', actor: 'GTA', label: 'Fill in Claim Form' },
-  { type: 'step', actor: 'GTA', label: 'Fill in Progress Report' },
-  { type: 'step', actor: 'GTA', label: 'Contact BIP to Submit' },
-  { type: 'note', label: 'Required Submission Documents', items: ['Invoice', 'Proof of Payment', 'Certificates (if any)', 'Completed Claim Form', 'Progress Report'] },
-
-  { type: 'stage', num: 4, title: 'BIP REVIEW & APPROVAL', bg: 'linear-gradient(90deg,#6d28d9,#7c3aed)' },
-  { type: 'step', actor: 'BIP', label: 'BIP Review & Audit' },
-  { type: 'decision', question: 'Verify?', yes: 'Continue to IC Meeting', no: 'Back for Clarification' },
-  { type: 'step', actor: 'BIP', label: 'IC Meeting & Review' },
-  { type: 'decision', question: 'Claim Approved?', yes: 'ICV Banking', no: 'Discharge Penalty' },
-  { type: 'step', actor: ['BIP', 'GTA'], label: 'ICV Banking' },
-  { type: 'step', actor: 'GTA', label: 'Relief of Obligation' },
-  { type: 'step', actor: 'GTA', label: 'Release of Performance Bond' },
-  { type: 'end' },
+const CLAIM_DOCS = [
+  'ICP Credit Claim Form',
+  'ICP Implementation Form',
+  'ICP Project Report (Annex 1A — photos, Annex 1B — feedback)',
+  'Formal Letter Appendix',
+  'Poster',
+  'Business Trip Request Form',
+  'Cash Advance Revision Form',
+  'Expenses Claim Form',
+  'Receipt',
+  'Purchase Requisition',
+  'Payment Voucher',
+  'Quotation',
+  'Invoice',
+  'Mileage Claim Forms',
+  'ACH Network Form',
 ]
 
-function FlowArrow() {
+function Lightbox({ src, alt, onClose }) {
+  useEffect(() => {
+    const handler = e => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <div style={{ width: 1.5, height: 14, background: '#94a3b8' }} />
-      <svg width="10" height="6" viewBox="0 0 10 6"><polygon points="5,6 0,0 10,0" fill="#94a3b8" /></svg>
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.87)', zIndex: 1000,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+        cursor: 'zoom-out',
+      }}
+    >
+      <img
+        src={src} alt={alt}
+        onClick={e => e.stopPropagation()}
+        style={{ maxWidth: '95vw', maxHeight: '90vh', borderRadius: 10, boxShadow: '0 24px 80px rgba(0,0,0,0.6)', cursor: 'default', display: 'block' }}
+      />
+      <button
+        onClick={onClose}
+        style={{
+          position: 'absolute', top: 20, right: 24, background: 'rgba(255,255,255,0.15)',
+          border: '1px solid rgba(255,255,255,0.25)', color: '#fff', width: 36, height: 36,
+          borderRadius: '50%', fontSize: 16, cursor: 'pointer', display: 'flex',
+          alignItems: 'center', justifyContent: 'center',
+        }}
+      >✕</button>
     </div>
   )
 }
 
-function ActorTag({ a }) {
-  const s = ACTOR_STYLES[a] || { bg: '#f3f4f6', color: '#6b7280', border: '#e5e7eb' }
+const STAGE_CHIP_COLORS = [
+  { bg: '#EBF3FB', color: '#1F4E79', border: '#bfdbfe' },
+  { bg: '#fef9c3', color: '#78350f', border: '#fde68a' },
+  { bg: '#EAF3DE', color: '#3B6D11', border: '#bbf7d0' },
+]
+
+function StageChips({ stages }) {
   return (
-    <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 7px', borderRadius: 7, background: s.bg, color: s.color, border: `1px solid ${s.border}`, whiteSpace: 'nowrap' }}>
-      {a}
-    </span>
+    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
+      {stages.map((s, i) => {
+        const c = STAGE_CHIP_COLORS[i] || STAGE_CHIP_COLORS[0]
+        return (
+          <span key={i} style={{ fontSize: 12, fontWeight: 600, padding: '5px 14px', borderRadius: 20, background: c.bg, color: c.color, border: `1px solid ${c.border}`, whiteSpace: 'nowrap' }}>
+            {s}
+          </span>
+        )
+      })}
+    </div>
   )
 }
 
 function ProcessFlow() {
+  const [lightbox, setLightbox] = useState(null)
+
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto' }}>
-      {/* Actor legend */}
-      <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #e5e7eb', padding: '12px 18px', marginBottom: 20, display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-        <span style={{ fontSize: 11, fontWeight: 600, color: '#6b7280', marginRight: 4 }}>Parties:</span>
-        {[
-          ['GTA', 'Global Turbine Asia'],
-          ['BOD', 'Board of Director'],
-          ['RMAF', 'RMAF'],
-          ['BIP', 'BIP (MINDEF)'],
-          ['MOF', 'MOF'],
-          ['MINDEF', 'MINDEF'],
-        ].map(([key, label]) => {
-          const s = ACTOR_STYLES[key]
-          return (
-            <span key={key} style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 8, background: s.bg, color: s.color, border: `1px solid ${s.border}` }}>
-              {label}
-            </span>
-          )
-        })}
+    <div style={{ maxWidth: 900, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 0 }}>
+
+      {/* Section 1 — ICP Proposal Flow */}
+      <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #e5e7eb', borderTop: '3px solid #1F4E79', padding: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#1F4E79', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 }}>
+          Section 1 — ICP Proposal Flow
+        </div>
+        <img
+          src="/flowchart/icp-proposal-flow.webp"
+          alt="ICP Proposal Flow"
+          onClick={() => setLightbox('/flowchart/icp-proposal-flow.webp')}
+          style={{ width: '100%', borderRadius: 10, boxShadow: '0 2px 14px rgba(31,78,121,0.10)', cursor: 'zoom-in', display: 'block', border: '0.5px solid #e5e7eb' }}
+        />
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#1F4E79', marginBottom: 8 }}>ICP Proposal Process</div>
+          <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.75, margin: 0 }}>
+            The ICP Proposal process begins with GTA receiving the Obligation Letter from BIP, followed by internal discussions and feasibility assessments. GTA consolidates its proposal with RMAF's wishlist before submitting for review through multiple levels — RMAF JKICP, BIP, and IOGC — until final approval by the Implementation Committee (IC). If rejected at any stage, GTA revises and resubmits the proposal.
+          </p>
+          <StageChips stages={[
+            'Stage 1: Proposal Preparation',
+            'Stage 2: Multi-level Review (RMAF → BIP → IOGC)',
+            'Stage 3: IC Decision & Implementation',
+          ]} />
+        </div>
       </div>
 
-      {/* Flow nodes */}
-      {FLOW_DATA.map((node, i) => {
-        if (node.type === 'stage') return (
-          <div key={i}>
-            {i > 0 && <FlowArrow />}
-            <div style={{ background: node.bg, borderRadius: 10, padding: '11px 20px', display: 'flex', alignItems: 'center', gap: 12, color: '#fff' }}>
-              <span style={{ fontSize: 10, fontWeight: 800, background: 'rgba(255,255,255,0.22)', padding: '2px 9px', borderRadius: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Stage {node.num}
-              </span>
-              <span style={{ fontSize: 14, fontWeight: 700 }}>{node.title}</span>
-            </div>
-          </div>
-        )
+      {/* Divider */}
+      <div style={{ height: 1, margin: '0 24px', background: 'linear-gradient(90deg,transparent,#e5e7eb,transparent)' }} />
 
-        if (node.type === 'step') {
-          const actors = Array.isArray(node.actor) ? node.actor : [node.actor]
-          return (
-            <div key={i}>
-              <FlowArrow />
-              <div style={{ background: '#fff', border: '0.5px solid #e5e7eb', borderRadius: 8, padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                <span style={{ fontSize: 13, color: '#1e293b', fontWeight: 500 }}>{node.label}</span>
-                <div style={{ display: 'flex', gap: 4, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                  {actors.map(a => <ActorTag key={a} a={a} />)}
-                </div>
+      {/* Section 2 — ICV Credit Claim Flow */}
+      <div style={{ background: '#fff', borderRadius: 12, border: '0.5px solid #e5e7eb', borderTop: '3px solid #378ADD', padding: 24 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: '#378ADD', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 16 }}>
+          Section 2 — ICV Credit Claim Flow
+        </div>
+        <img
+          src="/flowchart/icv-credit-claim-flow.webp"
+          alt="ICV Credit Claim Flow"
+          onClick={() => setLightbox('/flowchart/icv-credit-claim-flow.webp')}
+          style={{ width: '100%', borderRadius: 10, boxShadow: '0 2px 14px rgba(31,78,121,0.10)', cursor: 'zoom-in', display: 'block', border: '0.5px solid #e5e7eb' }}
+        />
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#1F4E79', marginBottom: 8 }}>ICV Credit Claim Process</div>
+          <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.75, margin: '0 0 20px' }}>
+            Once an ICP project is completed, GTA prepares the claim document by gathering all invoices, evidence photos, and filling in the required forms. The submission package is then sent to BIP for review and audit by the Implementation Committee (IC). If approved, GTA receives the ICV Credit Value Approval Letter.
+          </p>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#1F4E79', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 10 }}>
+            Required Submission Documents
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+            {CLAIM_DOCS.map((doc, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, background: '#f8fafc', borderRadius: 8, padding: '7px 10px', border: '0.5px solid #e5e7eb' }}>
+                <span style={{ fontSize: 10, fontWeight: 700, color: '#1F4E79', flexShrink: 0, minWidth: 18, marginTop: 1 }}>{String(i + 1).padStart(2, '0')}</span>
+                <span style={{ fontSize: 12, color: '#374151', lineHeight: 1.45 }}>{doc}</span>
               </div>
-            </div>
-          )
-        }
-
-        if (node.type === 'decision') return (
-          <div key={i}>
-            <FlowArrow />
-            <div style={{ background: '#fef9c3', border: '2px dashed #f59e0b', borderRadius: 8, padding: '12px 18px' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: '#92400e', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 4 }}>Decision</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#78350f', marginBottom: 10 }}>{node.question}</div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <div style={{ flex: 1, minWidth: 120, background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 6, padding: '7px 12px', fontSize: 12 }}>
-                  <span style={{ fontWeight: 700, color: '#166534' }}>✓ Yes</span>
-                  <span style={{ color: '#374151', marginLeft: 6 }}>→ {node.yes}</span>
-                </div>
-                <div style={{ flex: 1, minWidth: 120, background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 6, padding: '7px 12px', fontSize: 12 }}>
-                  <span style={{ fontWeight: 700, color: '#b91c1c' }}>✗ No</span>
-                  <span style={{ color: '#374151', marginLeft: 6 }}>→ {node.no}</span>
-                </div>
-              </div>
-            </div>
+            ))}
           </div>
-        )
+          <StageChips stages={[
+            'Stage 1: Claim Preparation & Document Gathering',
+            'Stage 2: BIP Review & IC Audit',
+            'Stage 3: ICV Credit Approval',
+          ]} />
+        </div>
+      </div>
 
-        if (node.type === 'note') return (
-          <div key={i}>
-            <FlowArrow />
-            <div style={{ background: '#f8fafc', border: '1px solid #e5e7eb', borderRadius: 8, padding: '12px 16px' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#1F4E79', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>{node.label}</div>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                {node.items.map((item, j) => (
-                  <span key={j} style={{ fontSize: 12, padding: '3px 10px', borderRadius: 6, background: '#fff', border: '0.5px solid #e5e7eb', color: '#374151' }}>{item}</span>
-                ))}
-              </div>
-            </div>
-          </div>
-        )
-
-        if (node.type === 'end') return (
-          <div key={i}>
-            <FlowArrow />
-            <div style={{ background: 'linear-gradient(90deg,#1D9E75,#059669)', borderRadius: 10, padding: '14px 20px', textAlign: 'center', color: '#fff', fontWeight: 700, fontSize: 15 }}>
-              ICP Obligation Discharged — END
-            </div>
-          </div>
-        )
-
-        return null
-      })}
+      {lightbox && <Lightbox src={lightbox} alt="Process flow diagram" onClose={() => setLightbox(null)} />}
     </div>
   )
 }
