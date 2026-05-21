@@ -98,7 +98,7 @@ function IcpTimeline() {
       )}
 
       <div style={{ textAlign: 'right', marginTop: 14, fontSize: 10, color: '#9ca3af', fontStyle: 'italic' }}>
-        Sources: Malaysia MOF Policy Documents; Balakrishnan (2008 2009 test); PK 1.7 Third Edition (2025)
+        Sources: Malaysia MOF Policy Documents; Balakrishnan (2008); PK 1.7 Third Edition (2025)
       </div>
     </div>
   )
