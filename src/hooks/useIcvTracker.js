@@ -6,6 +6,8 @@ const GENERATED_COLS = ['est_plan_icv', 'actual_icv', 'balance_to_claim', 'icv_v
 export function useIcvTracker(contractId) {
   const [ipds, setIpds] = useState([])
   const [milestones, setMilestones] = useState({}) // keyed by ipd_id
+  const [vendors, setVendors] = useState({}) // keyed by milestone_id
+  const [claimSubmissions, setClaimSubmissions] = useState({}) // keyed by `${contractId}_${ipdId}`
   const [loading, setLoading] = useState(true)
   const [milestonesLoading, setMilestonesLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -119,9 +121,139 @@ export function useIcvTracker(contractId) {
     })
   }
 
+  // ─── Vendor CRUD ─────────────────────────────────────────────────────────────
+
+  const fetchVendors = useCallback(async (milestoneId) => {
+    const { data, error } = await supabase
+      .from('milestone_vendors')
+      .select('*')
+      .eq('milestone_id', milestoneId)
+      .order('created_at')
+    if (!error) {
+      setVendors(prev => ({ ...prev, [milestoneId]: data || [] }))
+    }
+    return data || []
+  }, [])
+
+  const addVendor = async ({ milestone_id, submission_no, vendor_name, amount, invoice_link }) => {
+    const { data, error } = await supabase
+      .from('milestone_vendors')
+      .insert([{ milestone_id, submission_no, vendor_name, amount, invoice_link }])
+      .select()
+      .single()
+    if (error) throw error
+    setVendors(prev => ({
+      ...prev,
+      [milestone_id]: [...(prev[milestone_id] || []), data],
+    }))
+    return data
+  }
+
+  const updateVendor = async (id, fields) => {
+    const { data, error } = await supabase
+      .from('milestone_vendors')
+      .update(fields)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    setVendors(prev => {
+      const next = { ...prev }
+      for (const key of Object.keys(next)) {
+        if (next[key].some(v => v.id === id)) {
+          next[key] = next[key].map(v => v.id === id ? data : v)
+        }
+      }
+      return next
+    })
+    return data
+  }
+
+  const deleteVendor = async (id, milestoneId) => {
+    const { error } = await supabase
+      .from('milestone_vendors')
+      .delete()
+      .eq('id', id)
+    if (error) throw error
+    setVendors(prev => ({
+      ...prev,
+      [milestoneId]: (prev[milestoneId] || []).filter(v => v.id !== id),
+    }))
+  }
+
+  // ─── Claim Submission CRUD ───────────────────────────────────────────────────
+
+  const fetchClaimSubmissions = useCallback(async (cId, iId) => {
+    let q = supabase
+      .from('claim_submissions')
+      .select('*')
+      .order('submission_no')
+    if (cId) q = q.eq('contract_id', cId)
+    if (iId) q = q.eq('ipd_id', iId)
+    const { data, error } = await q
+    const key = `${cId}_${iId}`
+    if (!error) {
+      setClaimSubmissions(prev => ({ ...prev, [key]: data || [] }))
+    }
+    return data || []
+  }, [])
+
+  const addClaimSubmission = async ({ contract_id, ipd_id, submission_no, submission_date, status, claim_form_link, notes }) => {
+    const { data, error } = await supabase
+      .from('claim_submissions')
+      .insert([{ contract_id, ipd_id, submission_no, submission_date, status, claim_form_link, notes }])
+      .select()
+      .single()
+    if (error) throw error
+    const key = `${contract_id}_${ipd_id}`
+    setClaimSubmissions(prev => ({
+      ...prev,
+      [key]: [...(prev[key] || []), data].sort((a, b) =>
+        (a.submission_no || '').localeCompare(b.submission_no || '')
+      ),
+    }))
+    return data
+  }
+
+  const updateClaimSubmission = async (id, fields) => {
+    const { data, error } = await supabase
+      .from('claim_submissions')
+      .update(fields)
+      .eq('id', id)
+      .select()
+      .single()
+    if (error) throw error
+    setClaimSubmissions(prev => {
+      const next = { ...prev }
+      for (const key of Object.keys(next)) {
+        if (next[key].some(cs => cs.id === id)) {
+          next[key] = next[key].map(cs => cs.id === id ? data : cs)
+        }
+      }
+      return next
+    })
+    return data
+  }
+
+  const deleteClaimSubmission = async (id, cId, iId) => {
+    const { error } = await supabase
+      .from('claim_submissions')
+      .delete()
+      .eq('id', id)
+    if (error) throw error
+    const key = `${cId}_${iId}`
+    setClaimSubmissions(prev => ({
+      ...prev,
+      [key]: (prev[key] || []).filter(cs => cs.id !== id),
+    }))
+  }
+
   return {
-    ipds, milestones, loading, milestonesLoading, error,
+    ipds, milestones, vendors, claimSubmissions,
+    loading, milestonesLoading, error,
     fetchIpds, fetchMilestones, addIpd, updateIpd, deleteIpd,
     addMilestone, updateMilestone, deleteMilestone,
+    fetchVendors, addVendor, updateVendor, deleteVendor,
+    fetchClaimSubmissions, addClaimSubmission, updateClaimSubmission, deleteClaimSubmission,
   }
 }

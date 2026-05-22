@@ -8,29 +8,43 @@ const HOME_SUBS = [
   { tab: 'our-contracts', label: 'Our Contracts' },
 ]
 
-const NAV = [
+const ICV_SUBS = [
+  { to: '/icv',       label: 'Milestone Tracker' },
+  { to: '/bip-claim', label: 'BIP Claim Summary' },
+]
+
+const NAV_BEFORE = [
     { to: '/', label: 'Overview', icon: 'M3 3h7v7H3V3zm8 0h7v7h-7V3zM3 11h7v7H3v-7zm8 0h7v7h-7v-7z' },
     { to: '/contracts', label: 'Contract Details', icon: 'M4 4h16v2H4V4zm0 5h16v2H4V9zm0 5h10v2H4v-2z' },
     { to: '/gantt', label: 'Gantt Chart', icon: 'M3 3h4v4H3zm6 0h10v2H9zm0 5h10v2H9zm-6 0h4v4H3zm6 5h6v2H9zM3 13h4v4H3z' },
     { to: '/urgent', label: 'Urgent Folder', icon: 'M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5', urgent: true },
-    { to: '/icv', label: 'ICV Tracker', icon: 'M12 2a10 10 0 100 20A10 10 0 0012 2zm1 14H11v-2h2v2zm0-4H11V6h2v6z' },
+]
+
+const NAV_AFTER = [
     { to: '/org-chart', label: 'ICP Org Chart', icon: 'M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2 M9 7a4 4 0 100-8 4 4 0 000 8z M23 21v-2a4 4 0 00-3-3.87 M16 3.13a4 4 0 010 7.75' },
     { to: '/docs', label: 'Document Reference', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-    // { to: '/admin', label: 'AI Settings', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
 ]
+
+const ICV_ICON = 'M12 2a10 10 0 100 20A10 10 0 0012 2zm1 14H11v-2h2v2zm0-4H11V6h2v6z'
 
 export default function Sidebar({ urgentCount = 0 }) {
     const [isOpen, setIsOpen] = useState(true)
     const [homeExpanded, setHomeExpanded] = useState(false)
+    const [icvExpanded, setIcvExpanded] = useState(false)
     const location = useLocation()
     const navigate = useNavigate()
 
     const isHomePage = location.pathname === '/home'
+    const isIcvPage = location.pathname === '/icv' || location.pathname === '/bip-claim'
     const activeTab = new URLSearchParams(location.search).get('tab')
 
     useEffect(() => {
         if (isHomePage) setHomeExpanded(true)
     }, [isHomePage])
+
+    useEffect(() => {
+        if (isIcvPage) setIcvExpanded(true)
+    }, [isIcvPage])
 
     return (
         <div style={{
@@ -185,7 +199,8 @@ export default function Sidebar({ urgentCount = 0 }) {
                     )}
                 </div>
 
-                {NAV.map(item => (
+                {/* NAV items before ICV Tracker */}
+                {NAV_BEFORE.map(item => (
                     <NavLink key={item.to} to={item.to} end={item.to === '/'}
                         title={!isOpen ? item.label : undefined}
                         style={({ isActive }) => ({
@@ -241,6 +256,117 @@ export default function Sidebar({ urgentCount = 0 }) {
                                 }} />
                             )
                         )}
+                    </NavLink>
+                ))}
+
+                {/* ICV Tracker — expandable */}
+                <div>
+                    <button
+                        onClick={() => {
+                            navigate('/icv')
+                            if (isOpen) setIcvExpanded(prev => !prev)
+                        }}
+                        title={!isOpen ? 'ICV Tracker' : undefined}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            padding: isOpen ? '9px 12px' : '10px',
+                            borderRadius: 10, marginBottom: 3,
+                            width: '100%', border: 'none', cursor: 'pointer', textAlign: 'left',
+                            background: isIcvPage
+                                ? 'linear-gradient(90deg, rgba(59,130,246,0.22) 0%, rgba(59,130,246,0.08) 100%)'
+                                : 'transparent',
+                            color: isIcvPage ? '#93c5fd' : '#94a3b8',
+                            fontWeight: isIcvPage ? 600 : 400,
+                            fontSize: 13,
+                            justifyContent: isOpen ? 'flex-start' : 'center',
+                            borderLeft: isIcvPage ? '3px solid #3b82f6' : '3px solid transparent',
+                            transition: 'all 0.15s ease',
+                        }}
+                        onMouseEnter={e => { if (!isIcvPage) { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = '#cbd5e1' } }}
+                        onMouseLeave={e => { if (!isIcvPage) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#94a3b8' } }}
+                    >
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ flexShrink: 0 }}>
+                            <path d={ICV_ICON} />
+                        </svg>
+                        {isOpen && (
+                            <>
+                                <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden' }}>ICV Tracker</span>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                                    <path d={icvExpanded ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'} />
+                                </svg>
+                            </>
+                        )}
+                    </button>
+
+                    {isOpen && icvExpanded && (
+                        <div style={{ paddingLeft: 30, marginBottom: 6 }}>
+                            {ICV_SUBS.map(sub => {
+                                const isActive = location.pathname === sub.to
+                                return (
+                                    <Link
+                                        key={sub.to}
+                                        to={sub.to}
+                                        style={{
+                                            display: 'flex', alignItems: 'center', gap: 8,
+                                            padding: '6px 10px', borderRadius: 7, marginBottom: 2,
+                                            fontSize: 12, textDecoration: 'none',
+                                            color: isActive ? '#93c5fd' : '#64748b',
+                                            background: isActive ? 'rgba(59,130,246,0.12)' : 'transparent',
+                                            fontWeight: isActive ? 600 : 400,
+                                            transition: 'all 0.12s',
+                                        }}
+                                        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                                        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
+                                    >
+                                        <span style={{
+                                            width: 5, height: 5, borderRadius: '50%', flexShrink: 0,
+                                            background: isActive ? '#93c5fd' : '#475569',
+                                        }} />
+                                        {sub.label}
+                                    </Link>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                {/* NAV items after ICV Tracker */}
+                {NAV_AFTER.map(item => (
+                    <NavLink key={item.to} to={item.to}
+                        title={!isOpen ? item.label : undefined}
+                        style={({ isActive }) => ({
+                            display: 'flex', alignItems: 'center', gap: 10,
+                            padding: isOpen ? '9px 12px' : '10px',
+                            borderRadius: 10, marginBottom: 3,
+                            fontSize: 13, textDecoration: 'none',
+                            transition: 'all 0.15s ease',
+                            background: isActive
+                                ? 'linear-gradient(90deg, rgba(59,130,246,0.22) 0%, rgba(59,130,246,0.08) 100%)'
+                                : 'transparent',
+                            color: isActive ? '#93c5fd' : '#94a3b8',
+                            fontWeight: isActive ? 600 : 400,
+                            justifyContent: isOpen ? 'flex-start' : 'center',
+                            borderLeft: isActive ? '3px solid #3b82f6' : '3px solid transparent',
+                        })}
+                        onMouseEnter={e => {
+                            if (!e.currentTarget.classList.contains('active')) {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.05)'
+                                e.currentTarget.style.color = '#cbd5e1'
+                            }
+                        }}
+                        onMouseLeave={e => {
+                            if (!e.currentTarget.classList.contains('active')) {
+                                e.currentTarget.style.background = 'transparent'
+                                e.currentTarget.style.color = '#94a3b8'
+                            }
+                        }}
+                    >
+                        <svg width="15" height="15" viewBox="0 0 24 24"
+                            fill="none" stroke="currentColor" strokeWidth="1.8"
+                            style={{ flexShrink: 0 }}>
+                            <path d={item.icon} />
+                        </svg>
+                        {isOpen && <span style={{ flex: 1, whiteSpace: 'nowrap', overflow: 'hidden' }}>{item.label}</span>}
                     </NavLink>
                 ))}
             </nav>

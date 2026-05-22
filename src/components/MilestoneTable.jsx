@@ -13,7 +13,6 @@ const CATEGORY_COLORS = {
   'Strategic': { bg: '#FAEEDA', color: '#854F0B' },
 }
 
-// Columns that sub-rows inherit from their parent (readonly/greyed in sub-rows)
 const SHARED_COL_KEYS = new Set(['milestone_desc', 'est_nominal_value', 'multiplier', 'est_plan_icv'])
 
 function fmt(n) {
@@ -71,7 +70,8 @@ const EMPTY_SUB_ROW = {
   payment_planning: '', status_project: 'Not Started',
 }
 
-// parentRow: when provided, use parent's est/multiplier for the shared-column calc
+const EMPTY_VENDOR = { submission_no: '', vendor_name: '', amount: '', invoice_link: '' }
+
 function calc(row, parentRow = null) {
   const est = parseFloat(parentRow ? parentRow.est_nominal_value : row.est_nominal_value) || 0
   const actual = parseFloat(row.actual_nominal_value) || 0
@@ -151,23 +151,293 @@ function CellValue({ col, value }) {
   )
 }
 
-export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, onDelete, onUpdateIpd, onDeleteIpd, onEditIpd }) {
+// ─── Vendor Panel ─────────────────────────────────────────────────────────────
+
+const VENDOR_COLS = [
+  { key: 'submission_no', label: 'Submission No.', width: 110 },
+  { key: 'vendor_name', label: 'Vendor Name', width: 200 },
+  { key: 'amount', label: 'Amount (RM)', width: 130, numeric: true },
+  { key: 'invoice_link', label: 'Invoice Link', width: 180, isLink: true },
+]
+
+function VendorPanel({ milestoneId, vendors = [], loading, onAdd, onUpdate, onDelete }) {
+  const [editingCell, setEditingCell] = useState(null) // { vendorId, colKey }
+  const [draft, setDraft] = useState({}) // { [vendorId]: { [colKey]: val } }
+  const [newRow, setNewRow] = useState(null)
+  const [saving, setSaving] = useState(false)
+
+  // Group by submission_no
+  const groups = {}
+  vendors.forEach(v => {
+    const key = v.submission_no || '(no sub)'
+    if (!groups[key]) groups[key] = []
+    groups[key].push(v)
+  })
+  const sortedGroups = Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
+
+  function startEdit(vendorId, colKey, currentVal) {
+    setEditingCell({ vendorId, colKey })
+    setDraft(prev => ({
+      ...prev,
+      [vendorId]: { ...(prev[vendorId] || {}), [colKey]: currentVal ?? '' },
+    }))
+  }
+
+  async function commitEdit(vendor, colKey) {
+    setEditingCell(null)
+    const val = draft[vendor.id]?.[colKey]
+    if (val === undefined || val === vendor[colKey]) return
+    setSaving(true)
+    try { await onUpdate(vendor.id, { [colKey]: val }) } catch (e) { console.error(e) }
+    setSaving(false)
+  }
+
+  async function handleDelete(vendorId) {
+    if (!window.confirm('Delete this vendor row?')) return
+    try { await onDelete(vendorId, milestoneId) } catch (e) { console.error(e) }
+  }
+
+  async function saveNewRow() {
+    if (!newRow?.vendor_name?.trim()) return
+    setSaving(true)
+    try {
+      await onAdd({ ...newRow, milestone_id: milestoneId })
+      setNewRow(null)
+    } catch (e) { console.error(e) }
+    setSaving(false)
+  }
+
+  const thStyle = {
+    padding: '5px 8px', textAlign: 'left', fontSize: 10, fontWeight: 600,
+    color: '#6b7280', whiteSpace: 'nowrap', borderBottom: '1px solid #bfdbfe',
+    background: '#dbeafe',
+  }
+  const tdStyle = { padding: '5px 8px', fontSize: 12, verticalAlign: 'middle' }
+
+  return (
+    <div style={{
+      background: '#EBF3FB', borderTop: '1px solid #bfdbfe',
+      padding: '10px 16px 12px', borderBottom: '1px solid #dbeafe',
+    }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: '#1e40af', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+          Vendor / Invoice Records
+        </span>
+        {saving && <span style={{ fontSize: 10, color: '#9ca3af' }}>Saving…</span>}
+      </div>
+
+      {loading ? (
+        <div style={{ fontSize: 11, color: '#9ca3af', padding: '6px 0' }}>Loading vendors…</div>
+      ) : (
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, background: '#fff', borderRadius: 6, overflow: 'hidden', border: '1px solid #bfdbfe' }}>
+          <thead>
+            <tr>
+              {VENDOR_COLS.map(c => <th key={c.key} style={{ ...thStyle, minWidth: c.width }}>{c.label}</th>)}
+              <th style={{ ...thStyle, width: 60 }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {vendors.length === 0 && !newRow ? (
+              <tr>
+                <td colSpan={5} style={{ ...tdStyle, textAlign: 'center', color: '#9ca3af', padding: '10px 0' }}>
+                  No vendors yet.
+                </td>
+              </tr>
+            ) : null}
+
+            {sortedGroups.map(([subNo, rows]) => (
+              <Fragment key={subNo}>
+                {rows.map(vendor => (
+                  <tr
+                    key={vendor.id}
+                    style={{ borderBottom: '0.5px solid #e0eeff' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#f0f7ff' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = '' }}
+                  >
+                    {VENDOR_COLS.map(col => {
+                      const isEditing = editingCell?.vendorId === vendor.id && editingCell?.colKey === col.key
+                      const val = draft[vendor.id]?.[col.key] !== undefined && isEditing
+                        ? draft[vendor.id][col.key]
+                        : vendor[col.key]
+
+                      return (
+                        <td
+                          key={col.key}
+                          style={{ ...tdStyle, minWidth: col.width, cursor: col.isLink ? 'default' : 'text' }}
+                          onClick={() => { if (!col.isLink && !isEditing) startEdit(vendor.id, col.key, vendor[col.key]) }}
+                        >
+                          {isEditing ? (
+                            <input
+                              autoFocus
+                              type={col.numeric ? 'number' : 'text'}
+                              value={draft[vendor.id]?.[col.key] ?? ''}
+                              onChange={e => setDraft(prev => ({
+                                ...prev,
+                                [vendor.id]: { ...(prev[vendor.id] || {}), [col.key]: e.target.value },
+                              }))}
+                              onBlur={() => commitEdit(vendor, col.key)}
+                              style={{
+                                fontSize: 12, border: '1px solid #1F4E79', borderRadius: 4,
+                                padding: '2px 6px', background: '#fff', outline: 'none',
+                                width: col.width - 12,
+                              }}
+                            />
+                          ) : col.isLink ? (
+                            val ? (
+                              <a
+                                href={val}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ color: '#185FA5', textDecoration: 'none', fontSize: 14 }}
+                                onClick={e => e.stopPropagation()}
+                              >
+                                🔗
+                              </a>
+                            ) : (
+                              <span
+                                style={{ color: '#d1d5db', cursor: 'text', fontSize: 11 }}
+                                onClick={() => startEdit(vendor.id, col.key, vendor[col.key])}
+                              >
+                                + link
+                              </span>
+                            )
+                          ) : col.numeric ? (
+                            <span style={{ color: '#374151' }}>{fmt(val)}</span>
+                          ) : (
+                            <span style={{ color: '#374151' }}>{val || <span style={{ color: '#d1d5db' }}>—</span>}</span>
+                          )}
+                        </td>
+                      )
+                    })}
+                    <td style={{ ...tdStyle, textAlign: 'center' }}>
+                      <button
+                        onClick={() => handleDelete(vendor.id)}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: '#d1d5db', fontSize: 13, padding: '2px 4px', borderRadius: 4,
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.color = '#ef4444' }}
+                        onMouseLeave={e => { e.currentTarget.style.color = '#d1d5db' }}
+                      >
+                        ✕
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {/* Group total row */}
+                <tr style={{ background: '#dbeafe', borderBottom: '1px solid #bfdbfe' }}>
+                  <td style={{ ...tdStyle, fontWeight: 600, color: '#1e40af', fontSize: 11 }} colSpan={2}>
+                    Total — {subNo}
+                  </td>
+                  <td style={{ ...tdStyle, fontWeight: 600, color: '#1e40af', fontSize: 11 }}>
+                    {fmt(rows.reduce((s, v) => s + (parseFloat(v.amount) || 0), 0))}
+                  </td>
+                  <td colSpan={2} />
+                </tr>
+              </Fragment>
+            ))}
+
+            {/* New vendor input row */}
+            {newRow && (
+              <tr style={{ background: '#f0f7ff', borderBottom: '0.5px solid #bfdbfe' }}>
+                {VENDOR_COLS.map(col => (
+                  <td key={col.key} style={{ ...tdStyle, minWidth: col.width }}>
+                    <input
+                      type={col.numeric ? 'number' : 'text'}
+                      placeholder={col.label}
+                      value={newRow[col.key] ?? ''}
+                      onChange={e => setNewRow(prev => ({ ...prev, [col.key]: e.target.value }))}
+                      style={{
+                        fontSize: 11, border: '1px solid #bfdbfe', borderRadius: 4,
+                        padding: '2px 6px', background: '#fff', outline: 'none',
+                        width: col.width - 12,
+                      }}
+                    />
+                  </td>
+                ))}
+                <td style={{ ...tdStyle, whiteSpace: 'nowrap' }}>
+                  <button
+                    onClick={saveNewRow}
+                    disabled={saving}
+                    style={{
+                      fontSize: 10, padding: '2px 6px', borderRadius: 4,
+                      background: '#1F4E79', color: '#fff', border: 'none', cursor: 'pointer', marginRight: 3,
+                    }}
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setNewRow(null)}
+                    style={{
+                      fontSize: 10, padding: '2px 6px', borderRadius: 4,
+                      background: '#f3f4f6', color: '#6b7280', border: 'none', cursor: 'pointer',
+                    }}
+                  >
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      )}
+
+      {!newRow && (
+        <button
+          onClick={() => setNewRow({ ...EMPTY_VENDOR })}
+          style={{
+            marginTop: 8, fontSize: 11, padding: '4px 10px', borderRadius: 5,
+            background: '#1F4E79', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 500,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = '#1e3a5f' }}
+          onMouseLeave={e => { e.currentTarget.style.background = '#1F4E79' }}
+        >
+          + Add Vendor
+        </button>
+      )}
+    </div>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+export default function MilestoneTable({
+  ipd, milestones = [],
+  onAdd, onUpdate, onDelete, onUpdateIpd, onDeleteIpd, onEditIpd,
+  vendors = {},
+  onFetchVendors, onAddVendor, onUpdateVendor, onDeleteVendor,
+}) {
   const [editingCell, setEditingCell] = useState(null)
   const [draftValues, setDraftValues] = useState({})
   const [newRow, setNewRow] = useState(null)
-  const [newSubRow, setNewSubRow] = useState(null) // { parentId, data }
+  const [newSubRow, setNewSubRow] = useState(null)
   const [saving, setSaving] = useState(false)
 
   const [editingIpd, setEditingIpd] = useState(null)
   const [ipdDraft, setIpdDraft] = useState({})
 
-  // Group milestones into parents and a children map
+  // Vendor panel state
+  const [expandedVendors, setExpandedVendors] = useState(new Set())
+  const [vendorPanelLoading, setVendorPanelLoading] = useState(new Set())
+
   const parents = milestones.filter(m => !m.parent_milestone_id)
   const childrenMap = {}
   milestones.filter(m => m.parent_milestone_id).forEach(m => {
     if (!childrenMap[m.parent_milestone_id]) childrenMap[m.parent_milestone_id] = []
     childrenMap[m.parent_milestone_id].push(m)
   })
+
+  async function toggleVendorPanel(milestoneId) {
+    if (expandedVendors.has(milestoneId)) {
+      setExpandedVendors(prev => { const n = new Set(prev); n.delete(milestoneId); return n })
+      return
+    }
+    setExpandedVendors(prev => new Set([...prev, milestoneId]))
+    if (!onFetchVendors) return
+    setVendorPanelLoading(prev => new Set([...prev, milestoneId]))
+    try { await onFetchVendors(milestoneId) } catch (e) { console.error(e) }
+    setVendorPanelLoading(prev => { const n = new Set(prev); n.delete(milestoneId); return n })
+  }
 
   function startIpdEdit(field) {
     setEditingIpd(field)
@@ -244,7 +514,6 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
     setSaving(false)
   }
 
-  // Footer: est_plan_icv/est_nominal_value sum parent rows only; balance/variance use true per-parent calc
   function computeTotal(col) {
     const sumKeys = ['est_nominal_value', 'actual_nominal_value', 'est_plan_icv', 'actual_icv', 'total_icv_approved', 'balance_to_claim', 'icv_variance']
     if (!sumKeys.includes(col.key)) return null
@@ -265,7 +534,6 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
         s + (col.type === 'calc' ? (calc(r)[col.key] || 0) : (parseFloat(r[col.key]) || 0)), 0)
     }
 
-    // actual_nominal_value, actual_icv, total_icv_approved: sum all rows
     return milestones.reduce((s, r) => {
       if (col.type === 'calc') {
         const parentRow = r.parent_milestone_id ? parents.find(p => p.id === r.parent_milestone_id) : null
@@ -277,10 +545,12 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
 
   const catStyle = CATEGORY_COLORS[ipd.project_category] || { bg: '#f3f4f6', color: '#6b7280' }
 
-  // ── Render a data row (parent or sub) ────────────────────────────────────────
   function renderRow(row, parentRow = null) {
     const isSub = !!parentRow
     const computed = calc({ ...row, ...(draftValues[row.id] || {}) }, parentRow)
+    const rowVendors = vendors[row.id] || []
+    const vendorCount = rowVendors.length
+    const isExpanded = expandedVendors.has(row.id)
 
     return (
       <tr
@@ -341,6 +611,24 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
         })}
 
         <td style={{ padding: '9px 10px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+          {/* Vendors button */}
+          {onFetchVendors && (
+            <button
+              onClick={() => toggleVendorPanel(row.id)}
+              title={isExpanded ? 'Hide vendors' : 'Show vendors'}
+              style={{
+                fontSize: 10, padding: '2px 6px', borderRadius: 4,
+                background: isExpanded ? '#1F4E79' : (vendorCount > 0 ? '#EBF3FB' : 'none'),
+                color: isExpanded ? '#fff' : (vendorCount > 0 ? '#185FA5' : '#9ca3af'),
+                border: vendorCount > 0 ? '1px solid #bfdbfe' : '1px solid #e5e7eb',
+                cursor: 'pointer', marginRight: 4, fontWeight: 500, whiteSpace: 'nowrap',
+              }}
+              onMouseEnter={e => { if (!isExpanded) e.currentTarget.style.background = '#EBF3FB' }}
+              onMouseLeave={e => { if (!isExpanded) e.currentTarget.style.background = vendorCount > 0 ? '#EBF3FB' : 'none' }}
+            >
+              {vendorCount > 0 ? `📎 Vendors (${vendorCount})` : '📎 Add Vendor'}
+            </button>
+          )}
           {!isSub && (
             <button
               onClick={() => setNewSubRow({ parentId: row.id, data: { ...EMPTY_SUB_ROW } })}
@@ -373,7 +661,27 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
     )
   }
 
-  // ── Render new sub-row input row ─────────────────────────────────────────────
+  function renderVendorPanelRow(milestoneId) {
+    if (!expandedVendors.has(milestoneId)) return null
+    const isLoading = vendorPanelLoading.has(milestoneId)
+    const milestoneVendors = vendors[milestoneId] || []
+
+    return (
+      <tr key={`vendor-panel-${milestoneId}`}>
+        <td colSpan={COLS.length + 1} style={{ padding: 0 }}>
+          <VendorPanel
+            milestoneId={milestoneId}
+            vendors={milestoneVendors}
+            loading={isLoading}
+            onAdd={onAddVendor}
+            onUpdate={onUpdateVendor}
+            onDelete={onDeleteVendor}
+          />
+        </td>
+      </tr>
+    )
+  }
+
   function renderNewSubRow(parent) {
     const subComputed = calc(newSubRow.data, parent)
     return (
@@ -619,7 +927,13 @@ export default function MilestoneTable({ ipd, milestones = [], onAdd, onUpdate, 
             {parents.map(parent => (
               <Fragment key={parent.id}>
                 {renderRow(parent)}
-                {(childrenMap[parent.id] || []).map(child => renderRow(child, parent))}
+                {renderVendorPanelRow(parent.id)}
+                {(childrenMap[parent.id] || []).map(child => (
+                  <Fragment key={child.id}>
+                    {renderRow(child, parent)}
+                    {renderVendorPanelRow(child.id)}
+                  </Fragment>
+                ))}
                 {newSubRow?.parentId === parent.id && renderNewSubRow(parent)}
               </Fragment>
             ))}

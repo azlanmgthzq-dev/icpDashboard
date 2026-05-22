@@ -6,6 +6,7 @@ import ChatBot from './components/ChatBot'
 import AiAdmin from './pages/AiAdmin'
 import OrgChart from './pages/OrgChart'
 import IcvTracker from './pages/IcvTracker'
+import BipClaimSummary from './pages/BipClaimSummary'
 import Home from './pages/Home'
 import DocumentReference from './pages/DocumentReference'
 import { useUrgentItems } from './hooks/useUrgentItems'
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/gantt" element={<div style={{ padding: 40, color: '#9ca3af' }}>Gantt — coming soon</div>} />
           <Route path="/urgent" element={<div style={{ padding: 40, color: '#9ca3af' }}>Urgent folder — coming soon</div>} />
           <Route path="/icv" element={<IcvTracker />} />
+          <Route path="/bip-claim" element={<BipClaimSummary />} />
           <Route path="/home" element={<Home />} />
           <Route path="/admin" element={<AiAdmin />} />
           <Route path="/org-chart" element={<OrgChart />} />

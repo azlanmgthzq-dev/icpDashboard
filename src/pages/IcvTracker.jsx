@@ -305,8 +305,11 @@ export default function IcvTracker() {
   const [ipdToEdit, setIpdToEdit] = useState(null)
 
   const {
-    ipds, milestones, loading: ipdsLoading, milestonesLoading,
-    fetchMilestones, addIpd, updateIpd, deleteIpd, addMilestone, updateMilestone, deleteMilestone,
+    ipds, milestones, vendors,
+    loading: ipdsLoading, milestonesLoading,
+    fetchMilestones, addIpd, updateIpd, deleteIpd,
+    addMilestone, updateMilestone, deleteMilestone,
+    fetchVendors, addVendor, updateVendor, deleteVendor,
   } = useIcvTracker(selectedContractId)
 
   async function handleDeleteIpd(ipdId) {
@@ -492,6 +495,11 @@ export default function IcvTracker() {
               onUpdateIpd={updateIpd}
               onDeleteIpd={handleDeleteIpd}
               onEditIpd={setIpdToEdit}
+              vendors={vendors}
+              onFetchVendors={fetchVendors}
+              onAddVendor={addVendor}
+              onUpdateVendor={updateVendor}
+              onDeleteVendor={deleteVendor}
             />
           )}
         </div>
