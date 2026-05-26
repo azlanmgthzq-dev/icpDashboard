@@ -16,10 +16,20 @@ export function useUrgentItems() {
         setLoading(false)
     }
 
-    async function addItem({ title, due_date, file_link, uploaded_by, status }) {
+    async function addItem({ title, due_date, file_link, uploaded_by, status, submitted_by_name, assigned_to_name }) {
         const { error } = await supabase
             .from('urgent_items')
-            .insert([{ title, due_date, file_link, uploaded_by, status }])
+            .insert([{ title, due_date, file_link, uploaded_by, status, submitted_by_name, assigned_to_name }])
+        if (error) return { error: error.message }
+        await fetchItems()
+        return { success: true }
+    }
+
+    async function editItem(id, { title, due_date, file_link, status, submitted_by_name, assigned_to_name }) {
+        const { error } = await supabase
+            .from('urgent_items')
+            .update({ title, due_date, file_link, status, submitted_by_name, assigned_to_name })
+            .eq('id', id)
         if (error) return { error: error.message }
         await fetchItems()
         return { success: true }
@@ -37,5 +47,5 @@ export function useUrgentItems() {
         total: items.filter(i => i.status !== 'Done').length,
     }
 
-    return { items, loading, addItem, updateStatus, counts }
+    return { items, loading, addItem, editItem, updateStatus, counts }
 }
