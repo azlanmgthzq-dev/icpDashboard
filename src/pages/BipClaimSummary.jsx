@@ -46,13 +46,13 @@ function ClaimSubmissionManager({ submissions, contractId, ipdId, onAdd, onUpdat
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form, setForm] = useState({
-    submission_no: '', submission_date: '', status: 'Pending', claim_form_link: '', notes: '',
+    submission_no: '', submission_date: '', status: 'Pending', claim_form_link: '', title: '',
   })
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
 
   function resetForm() {
-    setForm({ submission_no: '', submission_date: '', status: 'Pending', claim_form_link: '', notes: '' })
+    setForm({ submission_no: '', submission_date: '', status: 'Pending', claim_form_link: '', title: '' })
     setErr('')
   }
 
@@ -63,7 +63,7 @@ function ClaimSubmissionManager({ submissions, contractId, ipdId, onAdd, onUpdat
       submission_date: sub.submission_date || '',
       status: sub.status || 'Pending',
       claim_form_link: sub.claim_form_link || '',
-      notes: sub.notes || '',
+      title: sub.title || '',
     })
     setShowForm(true)
   }
@@ -138,6 +138,11 @@ function ClaimSubmissionManager({ submissions, contractId, ipdId, onAdd, onUpdat
                 </span>
                 <StatusBadge status={sub.status} />
               </div>
+              {sub.title && (
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 3 }}>
+                  {sub.title}
+                </div>
+              )}
               {sub.submission_date && (
                 <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 3 }}>
                   {new Date(sub.submission_date).toLocaleDateString('en-MY')}
@@ -150,13 +155,8 @@ function ClaimSubmissionManager({ submissions, contractId, ipdId, onAdd, onUpdat
                   rel="noopener noreferrer"
                   style={{ fontSize: 11, color: '#185FA5', textDecoration: 'none' }}
                 >
-                  📎 Claim Form
+                  📎 {sub.title || 'Document'}
                 </a>
-              )}
-              {sub.notes && (
-                <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 3, fontStyle: 'italic' }}>
-                  {sub.notes}
-                </div>
               )}
               <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
                 <button
@@ -220,7 +220,7 @@ function ClaimSubmissionManager({ submissions, contractId, ipdId, onAdd, onUpdat
             </div>
             <div style={{ flex: '1 1 200px' }}>
               <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 3 }}>
-                Claim Form Link
+                Document / Attachment Link
               </label>
               <input
                 value={form.claim_form_link}
@@ -230,10 +230,11 @@ function ClaimSubmissionManager({ submissions, contractId, ipdId, onAdd, onUpdat
               />
             </div>
             <div style={{ flex: '1 1 180px' }}>
-              <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 3 }}>Notes</label>
+              <label style={{ fontSize: 11, color: '#6b7280', display: 'block', marginBottom: 3 }}>Title</label>
               <input
-                value={form.notes}
-                onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+                value={form.title}
+                onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
+                placeholder="e.g. Credit Claim Form, Implementation Report, Claim Report"
                 style={FIELD_STYLE}
               />
             </div>
@@ -348,7 +349,7 @@ function SubmissionGroups({ sortedGroupKeys, groups, submissions }) {
                             padding: '1px 8px',
                           }}
                         >
-                          📎 Claim Form
+                          📎 {subRecord.title || 'Document'}
                         </a>
                       )}
                     </div>

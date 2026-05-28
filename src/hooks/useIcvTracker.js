@@ -198,10 +198,10 @@ export function useIcvTracker(contractId) {
     return data || []
   }, [])
 
-  const addClaimSubmission = async ({ contract_id, ipd_id, submission_no, submission_date, status, claim_form_link, notes }) => {
+  const addClaimSubmission = async ({ contract_id, ipd_id, submission_no, submission_date, status, claim_form_link, title }) => {
     const { data, error } = await supabase
       .from('claim_submissions')
-      .insert([{ contract_id, ipd_id, submission_no, submission_date, status, claim_form_link, notes }])
+      .insert([{ contract_id, ipd_id, submission_no, submission_date, status, claim_form_link, title }])
       .select()
       .single()
     if (error) throw error
